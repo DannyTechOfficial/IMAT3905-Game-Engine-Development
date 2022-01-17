@@ -1,0 +1,14 @@
+# Directories
+.vs/
+bin/
+build/
+
+# Files
+*.user
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+vendor/glfw
+vendor/GoogleTest
+sandbox/log.txt
