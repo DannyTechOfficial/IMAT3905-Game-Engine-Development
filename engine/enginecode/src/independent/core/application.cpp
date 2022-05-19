@@ -1,483 +1,323 @@
 /** \file application.cpp
+*\brief The Application Class file
+* Contains all the code for creating the window, rendering object and camera movements
 */
-
 #include "engine_pch.h"
-
-// Temp
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
+#include <cassert>
 #include "core/application.h"
-#include "platform/GLFW/GLFWCodes.h"
-
 
 #ifdef NG_PLATFORM_WINDOWS
 #include "platform/GLFW/GLFWSystem.h"
 #endif
 
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+# include <glm/gtc/type_ptr.hpp>
 
-#include "rendering/indexBuffer.h"
-#include "rendering/vertexBuffer.h"
-#include "rendering/vertexArray.h"
+
 #include "rendering/subTexture.h"
-#include "rendering/texture.h"
-#include "rendering/shader.h"
+
+#include "rendering/IndexBuffer.h"
+#include "rendering/VertexBuffer.h"
+#include "rendering/VertexArray.h"
+#include "rendering/ShaderRend.h"
+#include "rendering/UniformBuffer.h"
+
 #include "rendering/Renderer3D.h"
 #include "rendering/Renderer2D.h"
+
+#include "../../Engine-Editor/editorcode/include/ImGuiHelper.h";
 
 namespace Engine {
 	// Set static vars
 	Application* Application::s_instance = nullptr;
 
+	//! Constructor to setup the window and the keyboard events 
+	/*!
+	*/
 	Application::Application()
 	{
+		for (auto ent : m_entities)
+			ent = m_registry.create();
+		
 		if (s_instance == nullptr)
 		{
 			s_instance = this;
 		}
+		//Start system and logger
+		m_loggerSystem.reset(new Log); 
+		m_loggerSystem->start();
 
-		//Start systems
-
-		//Start log
-		m_logSystem.reset(new Log);
-		m_logSystem->start();
-
-		// Start the windows System
+		//start windows system
 #ifdef NG_PLATFORM_WINDOWS
 		m_windowSystem.reset(new GLFWSystem);
 #endif
 		m_windowSystem->start();
 
-		// Start Timer
+		m_physics.reset(new PhysicsSystem);
+		m_physics->start(); // reset first? we need?
+		//m_physics->m_world->setGravity(reactphysics3d::Vector3(0.f, -10.f, 0.f));
+		//m_physics->m_world->setIsGravityEnabled(true);
+
+
+		//reset timer
 		m_timer.reset(new ChronoTimer);
 		m_timer->start();
-		WindowProperties props("Danny Tech Engine", 1024, 800, false);
-		m_window.reset(Window::create(props));
-		m_window->setVSync(false);
-		InputPoller::setNative(m_window->getNativeWindow());
-		//m_window->getEventHandler;
 
-#pragma region setCallback
-		m_window->getEventHandler().setOnCloseCallback(std::bind(&Application::onClose, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnResizeCallback(std::bind(&Application::onResize, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnFocusCallback(std::bind(&Application::onFocus, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnLostFocusCallback(std::bind(&Application::onLostFocus, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnWindowMovedCallback(std::bind(&Application::onMoved, this, std::placeholders::_1));
 
-		m_window->getEventHandler().setOnKeyPressedCallback(std::bind(&Application::onKeyPressed, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnKeyReleasedCallback(std::bind(&Application::onKeyReleased, this, std::placeholders::_1));
+#pragma region [FEATURE] Set Fullsceen
+		/*while (!m_fullscreenSet)
+		{
+			std::cout << "\nStart with Fullscreen (Y/N) ?\n";
+			std::cin >> m_setFullScreen;
+			
+			while (tolower(m_setFullScreen) != 'y' && tolower(m_setFullScreen) != 'n')
+			{
+				std::cout << "\nPlease enter Y or N as ur choice : ";
+				std::cin >> m_setFullScreen;
+			}
 
-		m_window->getEventHandler().setOnButtonPressedCallback(std::bind(&Application::onButtonPressed, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnButtonReleasedCallback(std::bind(&Application::onButtonReleased, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnMouseMovedCallback(std::bind(&Application::onMouseMoved, this, std::placeholders::_1));
-		m_window->getEventHandler().setOnMouseWheelCallback(std::bind(&Application::onMouseWheel, this, std::placeholders::_1));
+			if (tolower(m_setFullScreen) == 'y')
+			{
+				m_isFullscreen = true;
+				m_fullscreenSet = true;
+				std::cout << "\nLaunching in Fullscreen Mode!\n";
+				std::cin.ignore();
+			}
+			else
+			{
+				m_isFullscreen = false;
+				m_fullscreenSet = true;
+				std::cout << "\nLaunching in Minimised Mode!\n";
+				std::cin.ignore();
+			}
+		
+		}
+		*/
 #pragma endregion
+
+		WindowProperties props("My Game Engine",RendererShared::SCR_WIDTH, RendererShared::SCR_HEIGHT,m_isFullscreen);
+		m_window.reset(Window::create(props));
+
+		//window callbacks
+		m_window->getEventHandler().setOnCloseCallback(std::bind(&Application::onWindowClose, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnResizeCallback(std::bind(&Application::onWindowResize, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnMovedCallback(std::bind(&Application::onWindowMoved, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnLostFocusCallback(std::bind(&Application::onWindowLostFocus, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnFocusCallback(std::bind(&Application::onWindowFocus, this, std::placeholders::_1));
+		//keyboard callbacks
+		m_window->getEventHandler().setOnKeyPressedEvent(std::bind(&Application::onKeyPressed, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnKeyReleasedEvent(std::bind(&Application::onKeyReleased, this, std::placeholders::_1));
+		
+		//mouse callbacks
+		m_window->getEventHandler().setOnMouseMovedEvent(std::bind(&Application::onMouseMoved, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnMouseBtnPressedEvent(std::bind(&Application::onMouseBtnPressed, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnMouseBtnReleasedEvent(std::bind(&Application::onMouseBtnReleased, this, std::placeholders::_1));
+		m_window->getEventHandler().setOnMouseScrolledEvent(std::bind(&Application::onMouseScrolled, this, std::placeholders::_1));
+
+		InputPoller::setNativeWindow(m_window->getNativewindow());
 		m_timer->reset();
+
+		//ImGuiHelper::init();
+
+		Renderer2D::init();
+		//Renderer3D::init();
+
 	}
 
-	bool Application::onClose(WindowCloseEvent & e)
+#pragma region AppEvents
+	/*!
+	\param closeEvent WindowCloseEvent  - window close event
+	*/
+	bool Application::onWindowClose(WindowCloseEvent& e)
 	{
 		e.handle(true);
-		//Log::info("Window Close Works!!");
 		m_running = false;
-		return e.handled();
+		return e.isHandled();
 	}
 
-	bool Application::onResize(WindowResizeEvent &e)
+	/*!
+	\param resizeEvent WindowResizeEvent  - window resize event
+	*/
+	bool Application::onWindowResize(WindowResizeEvent& e)
 	{
 		e.handle(true);
-		//Log::info("Resize Works!! {0} {1}", e.getWidth(), e.getHeight());
-		return e.handled();
+		auto& size = e.getSize();
+	//	Log::trace("Window Resize : {0} / {1} ",size.x,size.y);
+		return e.isHandled();
 	}
 
-	bool Application::onFocus(e_WindowFocus & e)
+
+	/*!
+	\param movedEvent WindowMovedEvent  - window moved event
+	*/
+	bool Application::onWindowMoved(WindowMovedEvent& e)
 	{
 		e.handle(true);
-		Log::info("GAME RESUMED!");
-		return e.handled();
+		auto& size = e.getPos();
+		Log::trace("Window Moved : {0} / {1}", size.x, size.y);
+		return e.isHandled();
 	}
 
-	bool Application::onLostFocus(e_WindowLostFocus & e)
+
+	/*!
+	\param focusEvent WindowLostFocusEvent  - window lost focus event
+	*/
+	bool Application::onWindowLostFocus(WindowLostFocusEvent& e)
 	{
 		e.handle(true);
-		Log::info("GAME PAUSED!");
-		return e.handled();
+		m_layerStack.SetAllActive(false);
+		//Log::trace("Lost Focus");
+		return e.isHandled();
 	}
 
-	bool Application::onMoved(e_WindowMoved & e)
+	/*!
+	\param focusEvent WindowFocusEvent  - window gained focus event
+	*/
+	bool Application::onWindowFocus(WindowFocusEvent& e)
 	{
 		e.handle(true);
-		Log::info("Window Moved! - {0} - {1}", e.getXPos(), e.getYPos());
-		return e.handled();
+		m_layerStack.SetAllActive(true);
+		//Log::trace("Has Focus");
+		return e.isHandled();
 	}
 
-	bool Application::onKeyPressed(e_KeyPressed & e)
+	/*!
+	\param keyEvent KeyPressedEvent  - keyboard key press event
+	*/
+	bool Application::onKeyPressed(KeyPressedEvent& e)
 	{
-		Log::info("Key Pressed" + e.getKeyCode());
 		e.handle(true);
-		if (e.getKeyCode() == NG_KEY_RIGHT)
+		//Log::trace("{0} Key Pressed ", e.getKeyCode());
+		if (e.getKeyCode() == NG_KEY_ESCAPE)
 		{
-			Log::info("A Key Pressed!");
+			glfwSetInputMode(reinterpret_cast<GLFWwindow*>(m_window->getNativewindow()), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 		}
-		else if (e.getKeyCode() == int32_t(68))
+
+		if (e.getKeyCode() == NG_KEY_SPACE)
 		{
-			Log::info("D is pressed");
+			//switch to player cam....
+			isPlayerCam = !isPlayerCam;
 		}
-		else if (e.getKeyCode() == int32_t(87))
+
+		m_layerStack.onKeyPressed(e);
+		return e.isHandled();
+	}
+
+	/*!
+	\param keyEvent KeyReleasedEvent  - keyboard key released event
+	*/
+	bool Application::onKeyReleased(KeyReleasedEvent& e)
+	{
+		e.handle(true);
+		//reset speed multiplier for both cameras on key release
+		if (e.getKeyCode() == NG_KEY_W || e.getKeyCode() == NG_KEY_A || e.getKeyCode() == NG_KEY_S || e.getKeyCode() == NG_KEY_D
+			|| e.getKeyCode() == NG_KEY_Q || e.getKeyCode() == NG_KEY_E || e.getKeyCode() == NG_KEY_Z || e.getKeyCode() == NG_KEY_X)
+			m_SpeedMultiplier = 2.5f;
+
+		m_layerStack.onKeyReleased(e);
+
+		return e.isHandled();
+	}
+
+	/*!
+	\param mouseEvent MouseMovedEvent  - mouse moved event
+	*/
+	bool Application::onMouseMoved(MouseMovedEvent& e)
+	{
+		e.handle(true);
+		auto& size = e.getMousePos();
+		//m_camera.mouseMovement(size.x, size.y);
+		//Log::trace("Mouse Moved : {0} / {1}", size.x, size.y);
+		m_layerStack.onMouseMoved(e);
+
+		return e.isHandled();
+	}
+
+	/*!
+	\param mouseEvent MouseButtonPressedEvent  - mouse button press event
+	*/
+	bool Application::onMouseBtnPressed(MouseButtonPressedEvent& e)
+	{
+		e.handle(true);
+		if (e.getButton() == 0)
 		{
-			Log::info("W is pressed");
+			//glfwSetInputMode(reinterpret_cast<GLFWwindow*>(m_window->getNativewindow()), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		}
-		else if (e.getKeyCode() == int32_t(83))
-		{
-			Log::info("S is pressed");
-		}
-		return e.handled();
+		m_layerStack.onMouseBtnPressed(e);
+
+		return e.isHandled();
 	}
 
-	bool Application::onKeyReleased(e_KeyReleased & e)
+	/*!
+	\param mouseEvent MouseButtonReleasedEvent  - mouse button release event
+	*/
+	bool Application::onMouseBtnReleased(MouseButtonReleasedEvent& e)
 	{
 		e.handle(true);
-		return e.handled();
+		//Log::trace("Mouse Button Released : {0} ", e.getButton());
+		m_layerStack.onMouseBtnReleased(e);
+
+		return e.isHandled();
 	}
 
-	bool Application::onButtonPressed(e_MouseButtonPressed & e)
+	/*!
+	\param mouseEvent MouseScrollEvent  - mouse scroll event
+	*/
+	bool Application::onMouseScrolled(MouseScrollEvent& e)
 	{
 		e.handle(true);
-		Log::info("Key Pressed" + e.getButton());
-		return e.handled();
+		m_camera.mouseScroll(e.getYScroll());
+		projection =
+			glm::perspective(glm::radians(m_camera.getFOV()), (float)RendererShared::SCR_WIDTH / (float)RendererShared::SCR_HEIGHT, 0.1f, 100.f);
+
+		m_layerStack.onMouseScrolled(e);
+
+		return e.isHandled();
 	}
 
-	bool Application::onButtonReleased(e_MouseButtonReleased & e)
-	{
-		e.handle(true);
-		return e.handled();
-	}
-
-	bool Application::onMouseMoved(e_MouseMoved & e)
-	{
-		e.handle(true);
-		return e.handled();
-	}
-
-	bool Application::onMouseWheel(e_MouseScrolled & e)
-	{
-		e.handle(true);
-		return e.handled();
-	}
+#pragma endregion
 
 	Application::~Application()
 	{
-		//Stop systems.
 
-		//Stop log
-		m_logSystem->stop();
+		//delete world
+		m_physics->stop();
+		//stop the systems and logger
+		m_loggerSystem->stop();
+		
+		//ImGuiHelper::shutdown();
 
+		//stop windows system
 		m_windowSystem->stop();
+		
+		for (auto ent : m_entities)
+			m_registry.destroy(ent);
+
 	}
 
 
+	//! Defines the main loop functions of the application. 
+	//! Code for rendering, camera movement, etc run in the function
+	/*!
+	*/
 	void Application::run()
 	{
-#pragma region TEXTURES
-
-		std::shared_ptr<Texture> letterTexture;
-		letterTexture.reset(Texture::create("assets/textures/letterAndNumberCube2.png"));
-		std::shared_ptr<Texture> numberTexture;
-		numberTexture.reset(Texture::create("assets/textures/numberCube.png"));
-		unsigned char whitePx[4] = { 255, 255, 255, 255 };
-		std::shared_ptr<Texture> plainWhiteTexture;
-		plainWhiteTexture.reset(Texture::create(1, 1, 4, whitePx)); // Check after fix
-
-		SubTexture letterCube(letterTexture, { 0.f, 0.f }, { 1.0f, 0.5f });
-		SubTexture numberCube(numberTexture, { 0.f, 0.5f }, { 1.0f, 1.0f });
-
-#pragma endregion
-
-#pragma region RAW_DATA
-
-		float cubeVertices[8 * 24] = 
-		{
-			//	 <------ Pos ------>  <--- normal --->  <-- UV -->
-				 0.5f,  1.5f, -0.5f,  0.f,  0.f, -1.f,  letterCube.transformU(0.f),   letterCube.transformV(0.f),
-				 0.5f, 0.5f, -0.5f,  0.f,  0.f, -1.f,   letterCube.transformU(0.f),   letterCube.transformV(0.5f),
-				 -0.5f, 0.5f, -0.5f,  0.f,  0.f, -1.f,   letterCube.transformU(0.33f), letterCube.transformV(0.5f),
-				 -0.5f,  1.5f, -0.5f,  0.f,  0.f, -1.f,  letterCube.transformU(0.33f), letterCube.transformV(0.f),
-
-				 -0.5f, -0.5f, 0.5f,   0.f,  0.f,  1.f,  letterCube.transformU(0.33f), letterCube.transformV(0.5f),
-				 0.5f, -0.5f, 0.5f,   0.f,  0.f,  1.f,  letterCube.transformU(0.66f), letterCube.transformV(0.5f),
-				 0.5f,  0.5f, 0.5f,   0.f,  0.f,  1.f,  letterCube.transformU(0.66f), letterCube.transformV(0.f),
-				 -0.5f,  0.5f, 0.5f,   0.f,  0.f,  1.f,  letterCube.transformU(0.33),  letterCube.transformV(0.f),
-
-				 -0.5f, -0.5f, -0.5f,  0.f, -1.f,  0.f,  letterCube.transformU(1.f),   letterCube.transformV(0.f),
-				 0.5f, -0.5f, -0.5f,  0.f, -1.f,  0.f,  letterCube.transformU(0.66f), letterCube.transformV(0.f),
-				 0.5f, -0.5f, 0.5f,   0.f, -1.f,  0.f,  letterCube.transformU(0.66f), letterCube.transformV(0.5f),
-				 -0.5f, -0.5f, 0.5f,   0.f, -1.f,  0.f,  letterCube.transformU(1.0f),  letterCube.transformV(0.5f),
-
-				 0.5f,  0.5f, 0.5f,   0.f,  1.f,  0.f,  numberCube.transformU(0.f),   numberCube.transformV(0.5f),
-				 0.5f,  0.5f, -0.5f,  0.f,  1.f,  0.f,  numberCube.transformU(0.f),   numberCube.transformV(1.0f),
-				 -0.5f,  0.5f, -0.5f,  0.f,  1.f,  0.f,  numberCube.transformU(0.33f), numberCube.transformV(1.0f),
-				 -0.5f,  0.5f, 0.5f,   0.f,  1.f,  0.f,  numberCube.transformU(0.3f),  numberCube.transformV(0.5f),
-
-				 -0.5f,  0.5f, 0.5f,  -1.f,  0.f,  0.f,  numberCube.transformU(0.66f), numberCube.transformV(0.5f),
-				 -0.5f,  0.5f, -0.5f, -1.f,  0.f,  0.f,  numberCube.transformU(0.33f), numberCube.transformV(0.5f),
-				 -0.5f, -0.5f, -0.5f, -1.f,  0.f,  0.f,  numberCube.transformU(0.33f), numberCube.transformV(1.0f),
-				 -0.5f, -0.5f, 0.5f,  -1.f,  0.f,  0.f,  numberCube.transformU(0.66f), numberCube.transformV(1.0f),
-
-				 0.5f, -0.5f, -0.5f,  1.f,  0.f,  0.f,  numberCube.transformU(1.0f),  numberCube.transformV(1.0f),
-				 0.5f,  0.5f, -0.5f,  1.f,  0.f,  0.f,  numberCube.transformU(1.0f),  numberCube.transformV(0.5f),
-				 0.5f,  0.5f, 0.5f,   1.f,  0.f,  0.f,  numberCube.transformU(0.66f), numberCube.transformV(0.5f),
-				 0.5f, -0.5f, 0.5f,   1.f,  0.f,  0.f,  numberCube.transformU(0.66f), numberCube.transformV(1.0f)
-		};
-
-		float pyramidVertices[8 * 16] = 
-		{
-			//	 <------ Pos ------>  <--- normal --->  <-- UV -->
-				-0.5f, -0.5f, -0.5f,  0.f, -1.f, 0.f,  0.f, 0.f, //  square Magneta
-				 0.5f, -0.5f, -0.5f,  0.f, -1.f, 0.f,  0.f, 0.5f,
-				 0.5f, -0.5f,  0.5f,  0.f, -1.f, 0.f,  0.33f, 0.5f,
-				-0.5f, -0.5f,  0.5f,  0.f, -1.f, 0.f,  0.33f, 0.f,
-
-				-0.5f, -0.5f, -0.5f,  -0.8944f, 0.4472f, 0.f,  0.33f, 1.f,  //triangle Green
-				-0.5f, -0.5f,  0.5f,  -0.8944f, 0.4472f, 0.f,  0.66f, 1.f,
-				 0.0f,  0.5f,  0.0f,  -0.8944f, 0.4472f, 0.f,  0.495, 0.f,
-
-				-0.5f, -0.5f,  0.5f,  0.f, 0.4472f, 0.8944f,  0.f, 0.f, //triangle Red
-				 0.5f, -0.5f,  0.5f,  0.f, 0.4472f, 0.8944f,  0.f, 0.f,
-				 0.0f,  0.5f,  0.0f,  0.f, 0.4472f, 0.8944f,  0.f, 0.f,
-
-				 0.5f, -0.5f,  0.5f,  0.8944f, 0.4472f, 0.f,  0.f, 0.f, //  triangle Yellow
-				 0.5f, -0.5f, -0.5f,  0.8944f, 0.4472f,  0.f, 0.f, 0.f,
-				 0.0f,  0.5f,  0.0f,  0.8944f, 0.4472f,  0.f, 0.f, 0.f,
-
-				 0.5f, -0.5f, -0.5f,  0.f,  0.4472f, -0.8944f,   0.f, 0.f, //  triangle Blue
-				-0.5f, -0.5f, -0.5f,  0.f, 0.4472f, -0.8944f,   0.f, 0.f,
-				 0.0f,  0.5f,  0.0f,  0.f, 0.4472f, -0.8944f,  0.f, 0.f,
-		};
-
-		uint32_t pyramidIndices[3 * 6] =
-		{
-			0, 1, 2,
-			2, 3, 0,
-			4, 5, 6,
-			7, 8, 9,
-			10, 11, 12,
-			13, 14, 15
-		};
-
-		uint32_t cubeIndices[3 * 12] = 
-		{
-			0, 1, 2,
-			2, 3, 0,
-			4, 5, 6,
-			6, 7, 4,
-			8, 9, 10,
-			10, 11, 8,
-			12, 13, 14,
-			14, 15, 12,
-			16, 17, 18,
-			18, 19, 16,
-			20, 21, 22,
-			22, 23, 20
-		};
-#pragma endregion
-
-#pragma region GL_BUFFERS
-		std::shared_ptr<VertexArray> cubeVAO;
-		std::shared_ptr<VertexBuffer> cubeVBO;
-		std::shared_ptr<IndexBuffer> cubeIBO;
-
-		std::shared_ptr<VertexArray> pyramidVAO;
-		std::shared_ptr<VertexBuffer> pyramidVBO;
-		std::shared_ptr<IndexBuffer> pyramidIBO;
-
-		cubeVAO.reset(VertexArray::create());
-
-		BufferLayout cubeLayout = { ShaderDataType::Float3, ShaderDataType::Float3, ShaderDataType::Float2 };
-		cubeVBO.reset(VertexBuffer::create(cubeVertices, sizeof(cubeVertices), cubeLayout));
-
-		cubeVAO->addVertextBuffer(cubeVBO);
-
-		cubeIBO.reset(IndexBuffer::create(cubeIndices, 36));
-		cubeVAO->setIndexBuffer(cubeIBO);
-
-		pyramidVAO.reset(VertexArray::create());
-
-		pyramidVBO.reset(VertexBuffer::create(pyramidVertices, sizeof(pyramidVertices), cubeLayout));
-
-		pyramidIBO.reset(IndexBuffer::create(pyramidIndices, 18));
-
-		pyramidVAO->addVertextBuffer(pyramidVBO);
-
-		pyramidVAO->setIndexBuffer(pyramidIBO);
-
-#pragma endregion
-
-#pragma region SHADERS
-		std::shared_ptr<Shader> TPShader;
-		TPShader.reset(Shader::create("./assets/shaders/texturedPhong.glsl"));
-
-#pragma endregion
-
-#pragma region MATERIALS
-		std::shared_ptr<Material> pyramidMat;
-		std::shared_ptr<Material> letterCubeMat;
-		std::shared_ptr<Material> numberCubeMat;
-
-		pyramidMat.reset(new Material(TPShader, { 0.4f, 0.7f, 0.3f, 0.5f }));
-		letterCubeMat.reset(new Material(TPShader, letterTexture));
-		numberCubeMat.reset(new Material(TPShader, numberTexture));
-
-
-#pragma endregion
-		float timestep = 0.0f;
-
-		Quad quads[6] = 
-		{
-			Quad::createCentreHalfExtents({ 400.f, 75.f }, { 100.f, 50.f }),
-			Quad::createCentreHalfExtents({ 350.f, 300.f }, { 50.f, 100.f }),
-			Quad::createCentreHalfExtents({ 400.f, 500.f }, { 75.f, 75.f }),
-
-			Quad::createCentreHalfExtents({ 100.f, 200.f }, { 75.f, 50.f }),
-			Quad::createCentreHalfExtents({ 700.f, 100.f }, { 50.f, 25.f }),
-			Quad::createCentreHalfExtents({ 600.f, 450.f }, { 75.f, 15.f })
-		};
-		glClearColor(0.3f, 0.4f, 1.f, 1.0f);
-
-		Renderer3D::init();
-		Renderer2D::init();
-		/*glm::mat4 view = glm::lookAt(
-			glm::vec3(0.f, 0.f, 0.f),
-			glm::vec3(0.f, 0.f, -1.f),
-			glm::vec3(0.f, 1.f, 0.f)
-		);*/
-#pragma region CameraTest
-		glm::mat4 view;
-		float camX = 0.0f;
-		float camY = 0.0f;
-		float camZ = -6.0f;
-		float camZZ= 3.0f;
-		view = glm::lookAt(
-			glm::vec3(0.0f, 0.0f, 3.0f),
-			glm::vec3(camX, camY, camZ), 
-			glm::vec3(0.0f, 1.0f, 0.0f)
-		);
-		
-		const float radius = 10.f;
-#pragma endregion
-		glm::mat4 projection = glm::perspective(glm::radians(45.f), 1024.f / 800.f, 0.1f, 100.f);
-
-		glm::mat4 models[3];
-		models[0] = glm::translate(glm::mat4(1.0f), glm::vec3(-2.f, 0.f, -6.f));
-		models[1] = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -6.f));
-		models[2] = glm::translate(glm::mat4(1.0f), glm::vec3(2.f, 0.f, -6.f));
-
-		glm::mat4 view2D = glm::mat4(1.0f);
-		glm::mat4 projection2D = glm::ortho(0.f, static_cast<float>(m_window->getWidth()), static_cast<float>(m_window->getHeight()), 0.f);
-
-
-		SceneWideUniforms swu3D;
-
-		glm::vec3 lightdata[3] = { { 1.0f, 1.0f, 1.0f }, { -2.f, 4.f, 6.f }, { 0.f, 0.f, 0.f } };
-
-		swu3D["u_view"] = std::pair<ShaderDataType, void *>(ShaderDataType::Mat4, static_cast <void *>(glm::value_ptr(view)));
-		swu3D["u_projection"] = std::pair<ShaderDataType, void *>(ShaderDataType::Mat4, static_cast <void *>(glm::value_ptr(projection)));
-
-		swu3D["u_lightColour"] = std::pair<ShaderDataType, void *>(ShaderDataType::Float3, static_cast<void *>(glm::value_ptr(lightdata[0])));
-		swu3D["u_lightPos"] = std::pair<ShaderDataType, void *>(ShaderDataType::Float3, static_cast<void *>(glm::value_ptr(lightdata[1])));
-		swu3D["u_viewPos"] = std::pair<ShaderDataType, void *>(ShaderDataType::Float3, static_cast<void *>(glm::value_ptr(lightdata[2])));
-		
-		SceneWideUniforms swu2D;
-		swu2D["u_view"] = std::pair<ShaderDataType, void*>(ShaderDataType::Mat4, static_cast <void*>(glm::value_ptr(view2D)));
-		swu2D["u_projection"] = std::pair<ShaderDataType, void*>(ShaderDataType::Mat4, static_cast <void*>(glm::value_ptr(projection2D)));
-
-
+#pragma endregion RenderCommands
+		float timestep = 0.f;
 		while (m_running)
 		{
-			if (InputPoller::isKeyPressed(NG_KEY_S)) //!< Camera Controls (BASIC)
-			{
-				view = glm::lookAt(
-					glm::vec3(0.0f, 0.0f, 3.0f),
-					glm::vec3(camX, camY - 0.002, camZ),
-					glm::vec3(0.0f, 1.0f, 0.0f)
-				);
-				camY -= 0.002;
-			}
-			else if (InputPoller::isKeyPressed(NG_KEY_W)) 
-			{
-				view = glm::lookAt(
-					glm::vec3(0.0f, 0.0f, 3.0f),
-					glm::vec3(camX, camY + 0.002, camZ),
-					glm::vec3(0.0f, 1.0f, 0.0f)
-				);
-				camY += 0.002;
-			}
-			else if (InputPoller::isKeyPressed(NG_KEY_A))
-			{
-				view = glm::lookAt(
-					glm::vec3(0.0f, 0.0f, 3.0f),
-					glm::vec3(camX - 0.002, camY, camZ),
-					glm::vec3(0.0f, 1.0f, 0.0f)
-				);
-				camX -= 0.002;
-			}
-			else if (InputPoller::isKeyPressed(NG_KEY_D))
-			{
-				view = glm::lookAt(
-					glm::vec3(0.0f, 0.0f, 3.0f),
-					glm::vec3(camX + 0.002, camY, camZ),
-					glm::vec3(0.0f, 1.0f, 0.0f)
-				);
-				camX += 0.002;
-			}
+#pragma region [History] - While Loop
 
+#pragma endregion
 			timestep = m_timer->getElapsedTime();
 			m_timer->reset();
-			//Log::trace("FPS {0}", 1.0f / timestep);
 
-			// Do frame stuff
-			for (auto& model : models) { model = glm::rotate(model, timestep, glm::vec3(0.f, 1.0f, 0.f)); }
-
-			// Do frame stuff
-#pragma region Render
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			plainWhiteTexture->bindToUnit(0);
-			
-			glEnable(GL_DEPTH_TEST);
-			Renderer3D::begin(swu3D);
-
- 			Renderer3D::submit(pyramidVAO, pyramidMat, models[0]);
-
-			Renderer3D::submit(cubeVAO, letterCubeMat, models[1]);
-
-			Renderer3D::submit(cubeVAO, letterCubeMat, models[2]);
-
-			Renderer3D::end();
-			
-#pragma endregion
-			glDisable(GL_DEPTH_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			Renderer2D::begin(swu2D);
-
-			Renderer2D::submit(quads[0], { 0.f, 0.f, 1.f, 1.f });
-			Renderer2D::submit(quads[1], letterTexture);
-			Renderer2D::submit(quads[2], { 0.f, 1.f, 1.f, 1.f }, numberTexture);
-			Renderer2D::submit(quads[3], { 0.f, 1.f, 1.f, 0.5f }, numberTexture, 45.f, true);
-			Renderer2D::submit(quads[3], { 1.f, 0.f, 1.f, 0.5f }, numberTexture, glm::radians(-45.f));
-			Renderer2D::submit(quads[4], { 1.f, 1.f, 0.f, 1.f }, 30.f, true);
-			Renderer2D::submit(quads[5], { 1.f, 1.f, 0.f, 1.f }, letterTexture, 90.f, true);
-
-			Renderer2D::end();
-
-			glDisable(GL_BLEND);
-
+			m_physics->m_world->update(timestep);
+			m_layerStack.Update(timestep);
+			m_layerStack.Render();
 			m_window->onUpdate(timestep);
-		};
+		}
 
 	}
-
 }

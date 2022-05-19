@@ -1,6 +1,6 @@
 project('nlohmann_json',
     'cpp',
-    version : '3.8.0',
+    version : '3.10.5',
     license : 'MIT',
 )
 

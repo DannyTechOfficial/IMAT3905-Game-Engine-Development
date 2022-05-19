@@ -2,6 +2,7 @@
 */
 #pragma once
 
-#ifdef NG_PLATFORM_WINDOWS //<! If running Windows then use this character table.
+#ifdef  NG_PLATFORM_WINDOWS
 #include "platform/GLFW/GLFWCodes.h"
 #endif
+

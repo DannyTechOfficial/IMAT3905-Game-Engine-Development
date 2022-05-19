@@ -11,20 +11,18 @@ Throughout this page, we will describe how to compile the example file `example.
 If you are using OS X and [Homebrew](http://brew.sh), just type
 
 ```sh
-brew tap nlohmann/json
-brew install nlohmann_json
+brew install nlohmann-json
 ```
 
 and you're set. If you want the bleeding edge rather than the latest release, use
 
 ```sh
-brew tap nlohmann/json
-brew install nlohmann_json --HEAD
+brew install nlohmann-json --HEAD
 ```
 
-instead.
+instead. See [nlohmann-json](https://formulae.brew.sh/formula/nlohmann-json) for more information.
 
-!!! example
+??? example
 
 	1. Create the following file:
 
@@ -37,33 +35,32 @@ instead.
 	2. Install the package
 
 		```sh
-		brew tap nlohmann/json
-		brew install nlohmann_json
+		brew install nlohmann-json
 		```
 
-	3. Determine the include path, which defaults to `/usr/local/Cellar/nlohmann_json/$version/include`, where `$version` is the version of the library, e.g. `3.7.3`. The path of the library can be determined with
+	3. Determine the include path, which defaults to `/usr/local/Cellar/nlohmann-json/$version/include`, where `$version` is the version of the library, e.g. `3.7.3`. The path of the library can be determined with
 
 		```sh
-		brew list nlohmann_json
+		brew list nlohmann-json
 		```
 
 	4. Compile the code. For instance, the code can be compiled using Clang with
 
 		```sh
-		clang++ example.cpp -I/usr/local/Cellar/nlohmann_json/3.7.3/include -std=c++11 -o example
+		clang++ example.cpp -I/usr/local/Cellar/nlohmann-json/3.7.3/include -std=c++11 -o example
 		```
 
 ## Meson
 
 If you are using the [Meson Build System](http://mesonbuild.com), add this source tree as a [meson subproject](https://mesonbuild.com/Subprojects.html#using-a-subproject). You may also use the `include.zip` published in this project's [Releases](https://github.com/nlohmann/json/releases) to reduce the size of the vendored source tree. Alternatively, you can get a wrap file by downloading it from [Meson WrapDB](https://wrapdb.mesonbuild.com/nlohmann_json), or simply use `meson wrap install nlohmann_json`. Please see the meson project for any issues regarding the packaging.
 
-The provided meson.build can also be used as an alternative to cmake for installing `nlohmann_json` system-wide in which case a pkg-config file is installed. To use it, simply have your build system require the `nlohmann_json` pkg-config dependency. In Meson, it is preferred to use the [`dependency()`](https://mesonbuild.com/Reference-manual.html#dependency) object with a subproject fallback, rather than using the subproject directly.
+The provided `meson.build` can also be used as an alternative to cmake for installing `nlohmann_json` system-wide in which case a pkg-config file is installed. To use it, simply have your build system require the `nlohmann_json` pkg-config dependency. In Meson, it is preferred to use the [`dependency()`](https://mesonbuild.com/Reference-manual.html#dependency) object with a subproject fallback, rather than using the subproject directly.
 
 ## Conan
 
 If you are using [Conan](https://www.conan.io/) to manage your dependencies, merely add `nlohmann_json/x.y.z` to your `conanfile`'s requires, where `x.y.z` is the release version you want to use. Please file issues [here](https://github.com/conan-io/conan-center-index/issues) if you experience problems with the packages.
 
-!!! example
+??? example
 
 	1. Create the following files:
 
@@ -110,12 +107,44 @@ If you are using [Buckaroo](https://buckaroo.pm), you can install this library's
 
 ## vcpkg
 
-If you are using [vcpkg](https://github.com/Microsoft/vcpkg/) on your project for external dependencies, then you can use the [nlohmann-json package](https://github.com/Microsoft/vcpkg/tree/master/ports/nlohmann-json). Please see the vcpkg project for any issues regarding the packaging.
+If you are using [vcpkg](https://github.com/Microsoft/vcpkg/) on your project for external dependencies, then you can install the [nlohmann-json package](https://github.com/Microsoft/vcpkg/tree/master/ports/nlohmann-json) with `vcpkg install nlohmann-json` and follow the then displayed descriptions. Please see the vcpkg project for any issues regarding the packaging.
+
+??? example
+
+	1. Create the following files:
+
+		=== "CMakeLists.txt"
+
+		    ```cmake
+			--8<-- "integration/vcpkg/CMakeLists.txt"
+		    ```
+
+		=== "example.cpp"
+
+			```cpp
+			--8<-- "integration/vcpkg/example.cpp"
+			```
+
+    2. Install package:
+
+        ```sh
+        vcpkg install nlohmann-json
+        ```
+
+	3. Build:
+
+		```sh
+		mkdir build
+		cd build
+		cmake .. -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
+		cmake --build .
+		```
+
+    Note you need to adjust `/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake` to your system.
 
 ## cget
 
 If you are using [cget](http://cget.readthedocs.io/en/latest/), you can install the latest development version with `cget install nlohmann/json`. A specific version can be installed with `cget install nlohmann/json@v3.1.0`. Also, the multiple header version can be installed by adding the `-DJSON_MultipleHeaders=ON` flag (i.e., `cget install nlohmann/json -DJSON_MultipleHeaders=ON`).
-
 
 ## CocoaPods
 
@@ -123,7 +152,7 @@ If you are using [CocoaPods](https://cocoapods.org), you can use the library by 
 
 ## NuGet
 
-If you are using [NuGet](https://www.nuget.org), you can use the package [nlohmann.json](https://www.nuget.org/packages/nlohmann.json/). Please check [this extensive description](https://github.com/nlohmann/json/issues/1132#issuecomment-452250255) on how to use the package. Please files issues [here](https://github.com/hnkb/nlohmann-json-nuget/issues).
+If you are using [NuGet](https://www.nuget.org), you can use the package [nlohmann.json](https://www.nuget.org/packages/nlohmann.json/). Please check [this extensive description](https://github.com/nlohmann/json/issues/1132#issuecomment-452250255) on how to use the package. Please file issues [here](https://github.com/hnkb/nlohmann-json-nuget/issues).
 
 ## Conda
 
@@ -131,7 +160,11 @@ If you are using [conda](https://conda.io/), you can use the package [nlohmann_j
 
 ## MSYS2
 
-If you are using [MSYS2](http://www.msys2.org/), your can use the [mingw-w64-nlohmann-json](https://packages.msys2.org/base/mingw-w64-nlohmann-json) package, just type `pacman -S mingw-w64-i686-nlohmann-json` or `pacman -S mingw-w64-x86_64-nlohmann-json` for installation. Please file issues [here](https://github.com/msys2/MINGW-packages/issues/new?title=%5Bnlohmann-json%5D) if you experience problems with the packages.
+If you are using [MSYS2](http://www.msys2.org/), you can use the [mingw-w64-nlohmann-json](https://packages.msys2.org/base/mingw-w64-nlohmann-json) package, just type `pacman -S mingw-w64-i686-nlohmann-json` or `pacman -S mingw-w64-x86_64-nlohmann-json` for installation. Please file issues [here](https://github.com/msys2/MINGW-packages/issues/new?title=%5Bnlohmann-json%5D) if you experience problems with the packages.
+
+## MacPorts
+
+If you are using [MacPorts](https://ports.macports.org), execute `sudo port install nlohmann-json` to install the [nlohmann-json](https://ports.macports.org/port/nlohmann-json/) package.
 
 ## build2
 
@@ -141,3 +174,14 @@ Please file issues [here](https://github.com/build2-packaging/nlohmann-json) if 
 ## wsjcpp
 
 If you are using [`wsjcpp`](http://wsjcpp.org), you can use the command `wsjcpp install "https://github.com/nlohmann/json:develop"` to get the latest version. Note you can change the branch ":develop" to an existing tag or another branch.
+
+## CPM.cmake
+
+If you are using [`CPM.cmake`](https://github.com/TheLartians/CPM.cmake), you can check this [`example`](https://github.com/TheLartians/CPM.cmake/tree/master/examples/json). After [adding CPM script](https://github.com/TheLartians/CPM.cmake#adding-cpm) to your project, implement the following snippet to your CMake:
+
+```cmake
+CPMAddPackage(
+    NAME nlohmann_json
+    GITHUB_REPOSITORY nlohmann/json
+    VERSION 3.9.1)
+```

@@ -1,29 +1,40 @@
-/* \file OpenGLVertexArray.cpp */
+/** \file OpenGLVertexArray.cpp*/
+
 #include "engine_pch.h"
 #include <glad/glad.h>
-#include "platform/OpenGL/OpenGLVertexArray.h"
+#include "platform/OpenGL/OpenGLIndexBuffer.h"
+#include "..\..\..\include\platform\OpenGL\OpenGLVertexArray.h"
 
 namespace Engine
 {
 
 	namespace SDT
 	{
-		static GLenum toGLType(ShaderDataType type)
+		static GLenum getGLType(ShaderDataType type)
 		{
 			switch (type)
 			{
-			case ShaderDataType::Int: return GL_INT;
-			case ShaderDataType::Float: return GL_FLOAT;
-			case ShaderDataType::Float2: return GL_FLOAT;
-			case ShaderDataType::Float3: return GL_FLOAT;
-			case ShaderDataType::Float4: return GL_FLOAT;
-			case ShaderDataType::Mat4: return GL_FLOAT;
-			default: return GL_INVALID_ENUM;
+			case ShaderDataType::Byte4:return GL_UNSIGNED_BYTE;
+			case ShaderDataType::Short:return GL_SHORT;
+			case ShaderDataType::Short2:return GL_SHORT;
+			case ShaderDataType::Short3:return GL_SHORT;
+			case ShaderDataType::Short4:return GL_SHORT;
+			case ShaderDataType::Float:return GL_FLOAT;
+			case ShaderDataType::Float2:return GL_FLOAT;
+			case ShaderDataType::Float3:return GL_FLOAT;
+			case ShaderDataType::Float4:return GL_FLOAT;
+			case ShaderDataType::Mat3:return GL_FLOAT;
+			case ShaderDataType::Mat4:return GL_FLOAT;
+			case ShaderDataType::Int:return GL_INT;
+			case ShaderDataType::FlatByte:return GL_BYTE;
+			case ShaderDataType::FlatInt:return GL_INT;
+			default:
+				return GL_INVALID_ENUM;
 			}
 		}
 	}
 
-	OpenGLVertexArray::OpenGLVertexArray() //!< Creates a vertex array.
+	OpenGLVertexArray::OpenGLVertexArray()
 	{
 		glCreateVertexArrays(1, &m_OpenGL_ID);
 		glBindVertexArray(m_OpenGL_ID);
@@ -32,11 +43,12 @@ namespace Engine
 	OpenGLVertexArray::~OpenGLVertexArray()
 	{
 		glDeleteVertexArrays(1, &m_OpenGL_ID);
-
 	}
 
-	void OpenGLVertexArray::addVertextBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) //!< Adds VertexBuffer
+	void OpenGLVertexArray::addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
 	{
+		m_vertexBuffer.push_back(vertexBuffer);
+
 		glBindVertexArray(m_OpenGL_ID);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer->getRenderID());
 
@@ -44,20 +56,31 @@ namespace Engine
 		for (const auto& element : layout)
 		{
 			uint32_t normalised = GL_FALSE;
-			glEnableVertexAttribArray(m_attributeIndex);
-			glVertexAttribPointer(
-				m_attributeIndex,
-				SDT::componentCount(element.m_dataType),
-				SDT::toGLType(element.m_dataType),
-				normalised,
-				layout.getStride(),
-				(void*)element.m_offset);
-			m_attributeIndex++;
+			if (element.isNormalized) {normalised = GL_TRUE;}
+			glEnableVertexAttribArray(m_attribIndex);
 
+			if (element.m_dataType == ShaderDataType::FlatInt || element.m_dataType == ShaderDataType::FlatByte)
+			{
+				glVertexAttribIPointer(m_attribIndex,
+					SDT::componenetCount(element.m_dataType),
+					SDT::getGLType(element.m_dataType),
+					layout.getStride(),
+					(const void*)element.m_offset);
+			}
+			else
+			{
+				glVertexAttribPointer(m_attribIndex,
+					SDT::componenetCount(element.m_dataType),
+					SDT::getGLType(element.m_dataType),
+					normalised,
+					layout.getStride(),
+					(void*)element.m_offset);
+			}
+				m_attribIndex++;
 		}
-		m_vertexBuffer.push_back(vertexBuffer);
 	}
-	void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) //!< Sets index buffer
+
+	void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer)
 	{
 		m_indexBuffer = indexBuffer;
 	}

@@ -1,12 +1,12 @@
 /*
     __ _____ _____ _____
  __|  |   __|     |   | |  JSON for Modern C++ (test suite)
-|  |  |__   |  |  | | | |  version 3.8.0
+|  |  |__   |  |  | | | |  version 3.10.5
 |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 
 Licensed under the MIT License <http://opensource.org/licenses/MIT>.
 SPDX-License-Identifier: MIT
-Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+Copyright (c) 2013-2022 Niels Lohmann <http://nlohmann.me>.
 
 Permission is hereby  granted, free of charge, to any  person obtaining a copy
 of this software and associated  documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ using nlohmann::json;
 #include <fstream>
 #include <sstream>
 #include <test_data.hpp>
+#include "test_utils.hpp"
 
 TEST_CASE("BSON")
 {
@@ -100,7 +101,11 @@ TEST_CASE("BSON")
             { std::string("en\0try", 6), true }
         };
         CHECK_THROWS_AS(json::to_bson(j), json::out_of_range&);
+#if JSON_DIAGNOSTICS
+        CHECK_THROWS_WITH(json::to_bson(j), "[json.exception.out_of_range.409] (/en) BSON key cannot contain code point U+0000 (at byte 2)");
+#else
         CHECK_THROWS_WITH(json::to_bson(j), "[json.exception.out_of_range.409] BSON key cannot contain code point U+0000 (at byte 2)");
+#endif
     }
 
     SECTION("string length must be at least 1")
@@ -682,42 +687,42 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool boolean(bool)
+    bool boolean(bool /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_integer(json::number_integer_t)
+    bool number_integer(json::number_integer_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_unsigned(json::number_unsigned_t)
+    bool number_unsigned(json::number_unsigned_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_float(json::number_float_t, const std::string&)
+    bool number_float(json::number_float_t /*unused*/, const std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool string(std::string&)
+    bool string(std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool binary(std::vector<std::uint8_t>&)
+    bool binary(std::vector<std::uint8_t>& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool start_object(std::size_t)
+    bool start_object(std::size_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool key(std::string&)
+    bool key(std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
@@ -727,7 +732,7 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool start_array(std::size_t)
+    bool start_array(std::size_t /*unused*/)
     {
         return events_left-- > 0;
     }
@@ -737,7 +742,7 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool parse_error(std::size_t, const std::string&, const json::exception&)
+    bool parse_error(std::size_t /*unused*/, const std::string& /*unused*/, const json::exception& /*unused*/) // NOLINT(readability-convert-member-functions-to-static)
     {
         return false;
     }
@@ -745,7 +750,7 @@ class SaxCountdown
   private:
     int events_left = 0;
 };
-}
+} // namespace
 
 TEST_CASE("Incomplete BSON Input")
 {
@@ -766,7 +771,7 @@ TEST_CASE("Incomplete BSON Input")
         CHECK(json::from_bson(incomplete_bson, true, false).is_discarded());
 
         SaxCountdown scp(0);
-        CHECK(not json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
+        CHECK(!json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
     }
 
     SECTION("Incomplete BSON Input 2")
@@ -784,7 +789,7 @@ TEST_CASE("Incomplete BSON Input")
         CHECK(json::from_bson(incomplete_bson, true, false).is_discarded());
 
         SaxCountdown scp(0);
-        CHECK(not json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
+        CHECK(!json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
     }
 
     SECTION("Incomplete BSON Input 3")
@@ -808,7 +813,7 @@ TEST_CASE("Incomplete BSON Input")
         CHECK(json::from_bson(incomplete_bson, true, false).is_discarded());
 
         SaxCountdown scp(1);
-        CHECK(not json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
+        CHECK(!json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
     }
 
     SECTION("Incomplete BSON Input 4")
@@ -825,7 +830,7 @@ TEST_CASE("Incomplete BSON Input")
         CHECK(json::from_bson(incomplete_bson, true, false).is_discarded());
 
         SaxCountdown scp(0);
-        CHECK(not json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
+        CHECK(!json::sax_parse(incomplete_bson, &scp, json::input_format_t::bson));
     }
 
     SECTION("Improve coverage")
@@ -835,7 +840,7 @@ TEST_CASE("Incomplete BSON Input")
             json j = {{"key", "value"}};
             auto bson_vec = json::to_bson(j);
             SaxCountdown scp(2);
-            CHECK(not json::sax_parse(bson_vec, &scp, json::input_format_t::bson));
+            CHECK(!json::sax_parse(bson_vec, &scp, json::input_format_t::bson));
         }
 
         SECTION("array")
@@ -846,7 +851,7 @@ TEST_CASE("Incomplete BSON Input")
             };
             auto bson_vec = json::to_bson(j);
             SaxCountdown scp(2);
-            CHECK(not json::sax_parse(bson_vec, &scp, json::input_format_t::bson));
+            CHECK(!json::sax_parse(bson_vec, &scp, json::input_format_t::bson));
         }
     }
 }
@@ -866,8 +871,9 @@ TEST_CASE("Negative size of binary value")
 
         0x00 // end marker
     };
-    CHECK_THROWS_AS(json::from_bson(input), json::parse_error);
-    CHECK_THROWS_WITH(json::from_bson(input), "[json.exception.parse_error.112] parse error at byte 15: syntax error while parsing BSON binary: byte array length cannot be negative, is -1");
+    json _;
+    CHECK_THROWS_AS(_ = json::from_bson(input), json::parse_error);
+    CHECK_THROWS_WITH(_ = json::from_bson(input), "[json.exception.parse_error.112] parse error at byte 15: syntax error while parsing BSON binary: byte array length cannot be negative, is -1");
 }
 
 TEST_CASE("Unsupported BSON input")
@@ -887,7 +893,7 @@ TEST_CASE("Unsupported BSON input")
     CHECK(json::from_bson(bson, true, false).is_discarded());
 
     SaxCountdown scp(0);
-    CHECK(not json::sax_parse(bson, &scp, json::input_format_t::bson));
+    CHECK(!json::sax_parse(bson, &scp, json::input_format_t::bson));
 }
 
 TEST_CASE("BSON numerical data")
@@ -1233,7 +1239,11 @@ TEST_CASE("BSON numerical data")
                     };
 
                     CHECK_THROWS_AS(json::to_bson(j), json::out_of_range&);
+#if JSON_DIAGNOSTICS
+                    CHECK_THROWS_WITH_STD_STR(json::to_bson(j), "[json.exception.out_of_range.407] (/entry) integer number " + std::to_string(i) + " cannot be represented by BSON as it does not fit int64");
+#else
                     CHECK_THROWS_WITH_STD_STR(json::to_bson(j), "[json.exception.out_of_range.407] integer number " + std::to_string(i) + " cannot be represented by BSON as it does not fit int64");
+#endif
                 }
             }
 
@@ -1263,10 +1273,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse BSON file
-                std::ifstream f_bson(filename + ".bson", std::ios::binary);
-                std::vector<std::uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_bson)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".bson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_bson(packed));
 
@@ -1296,10 +1303,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse BSON file
-                std::ifstream f_bson(filename + ".bson", std::ios::binary);
-                std::vector<std::uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_bson)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".bson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_bson({packed.data(), packed.size()}));
 
@@ -1314,10 +1318,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse BSON file
-                std::ifstream f_bson(filename + ".bson", std::ios::binary);
-                std::vector<std::uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_bson)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".bson");
 
                 {
                     INFO_WITH_TEMP(filename + ": output adapters: std::vector<std::uint8_t>");

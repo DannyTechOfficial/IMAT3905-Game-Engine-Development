@@ -32,6 +32,63 @@ Exceptions are used widely within the library. They can, however, be switched of
 
 Note that `JSON_THROW_USER` should leave the current scope (e.g., by throwing or aborting), as continuing after it may yield undefined behavior.
 
+??? example
+
+    The code below switches off exceptions and creates a log entry with a detailed error message in case of errors.
+
+    ```cpp
+    #include <iostream>
+    
+    #define JSON_TRY_USER if(true)
+    #define JSON_CATCH_USER(exception) if(false)
+    #define JSON_THROW_USER(exception)                           \
+        {std::clog << "Error in " << __FILE__ << ":" << __LINE__ \
+                   << " (function " << __FUNCTION__ << ") - "    \
+                   << (exception).what() << std::endl;           \
+         std::abort();}
+    
+    #include <nlohmann/json.hpp>
+    ```
+
+Note the explanatory [`what()`](https://en.cppreference.com/w/cpp/error/exception/what) string of exceptions is not available for MSVC if exceptions are disabled, see [#2824](https://github.com/nlohmann/json/discussions/2824).
+
+### Extended diagnostic messages
+
+Exceptions in the library are thrown in the local context of the JSON value they are detected. This makes detailed diagnostics messages, and hence debugging, difficult.
+
+??? example
+
+    ```cpp
+    --8<-- "examples/diagnostics_standard.cpp"
+    ```
+    
+    Output:
+
+    ```
+    --8<-- "examples/diagnostics_standard.output"
+    ```
+
+    This exception can be hard to debug if storing the value `#!c "12"` and accessing it is further apart.
+
+To create better diagnostics messages, each JSON value needs a pointer to its parent value such that a global context (i.e., a path from the root value to the value that lead to the exception) can be created. That global context is provided as [JSON Pointer](../features/json_pointer.md).
+
+As this global context comes at the price of storing one additional pointer per JSON value and runtime overhead to maintain the parent relation, extended diagnostics are disabled by default. They can, however, be enabled by defining the preprocessor symbol [`JSON_DIAGNOSTICS`](../features/macros.md#json_diagnostics) to `1` before including `json.hpp`.
+
+??? example
+
+    ```cpp
+    --8<-- "examples/diagnostics_extended.cpp"
+    ```
+    
+    Output:
+
+    ```
+    --8<-- "examples/diagnostics_extended.output"
+    ```
+
+    Now the exception message contains a JSON Pointer `/address/housenumber` that indicates which value has the wrong type.
+
+
 ## Parse errors
 
 This exception is thrown by the library when a parse error occurs. Parse errors
@@ -120,18 +177,22 @@ This error indicates a syntax error while deserializing a JSON text. The error m
 
 !!! tip
 
-    - Make sure the input is correctly read. Try to write the input to standard output to check if, for instance, the input file was successfully openened.
+    - Make sure the input is correctly read. Try to write the input to standard output to check if, for instance, the input file was successfully opened.
     - Paste the input to a JSON validator like <http://jsonlint.com> or a tool like [jq](https://stedolan.github.io/jq/).
 
 ### json.exception.parse_error.102
 
-JSON uses the `\uxxxx` format to describe Unicode characters. Code points above above 0xFFFF are split into two `\uxxxx` entries ("surrogate pairs"). This error indicates that the surrogate pair is incomplete or contains an invalid code point.
+JSON uses the `\uxxxx` format to describe Unicode characters. Code points above 0xFFFF are split into two `\uxxxx` entries ("surrogate pairs"). This error indicates that the surrogate pair is incomplete or contains an invalid code point.
 
 !!! failure "Example message"
 
     ```
     parse error at 14: missing or wrong low surrogate
     ```
+
+!!! note
+
+    This exception is not used any more. Instead [json.exception.parse_error.101](#jsonexceptionparse_error101) with a more detailed description is used.
 
 ### json.exception.parse_error.103
 
@@ -142,6 +203,10 @@ Unicode supports code points up to 0x10FFFF. Code points above 0x10FFFF are inva
     ```
     parse error: code points above 0x10FFFF are invalid
     ```
+
+!!! note
+
+    This exception is not used any more. Instead [json.exception.parse_error.101](#jsonexceptionparse_error101) with a more detailed description is used.
 
 ### json.exception.parse_error.104
 
@@ -261,6 +326,16 @@ The parsing of the corresponding BSON record type is not implemented (yet).
     [json.exception.parse_error.114] parse error at byte 5: Unsupported BSON record type 0xFF
     ```
 
+### json.exception.parse_error.115
+
+A UBJSON high-precision number could not be parsed.
+
+!!! failure "Example message"
+
+    ```
+    [json.exception.parse_error.115] parse error at byte 5: syntax error while parsing UBJSON high-precision number: invalid number text: 1A
+    ```
+
 ## Iterator errors
 
 This exception is thrown if iterators passed to a library function do not match
@@ -294,7 +369,7 @@ The iterators passed to constructor `basic_json(InputIT first, InputIT last)` ar
 
 ### json.exception.invalid_iterator.202
 
-In an erase or insert function, the passed iterator @a pos does not belong to the JSON value for which the function was called. It hence does not define a valid position for the deletion/insertion.
+In the [erase](../api/basic_json/erase.md) or insert function, the passed iterator `pos` does not belong to the JSON value for which the function was called. It hence does not define a valid position for the deletion/insertion.
 
 !!! failure "Example message"
 
@@ -307,7 +382,7 @@ In an erase or insert function, the passed iterator @a pos does not belong to th
 
 ### json.exception.invalid_iterator.203
 
-Either iterator passed to function `erase(IteratorType` first, IteratorType last) does not belong to the JSON value from which values shall be erased. It hence does not define a valid range to delete values from.
+Either iterator passed to function [`erase(IteratorType first, IteratorType last`)](../api/basic_json/erase.md) does not belong to the JSON value from which values shall be erased. It hence does not define a valid range to delete values from.
 
 !!! failure "Example message"
 
@@ -317,7 +392,7 @@ Either iterator passed to function `erase(IteratorType` first, IteratorType last
 
 ### json.exception.invalid_iterator.204
 
-When an iterator range for a primitive type (number, boolean, or string) is passed to a constructor or an erase function, this range has to be exactly (`begin(),` `end()),` because this is the only way the single stored value is expressed. All other ranges are invalid.
+When an iterator range for a primitive type (number, boolean, or string) is passed to a constructor or an [erase](../api/basic_json/erase.md) function, this range has to be exactly (`begin(),` `end()),` because this is the only way the single stored value is expressed. All other ranges are invalid.
 
 !!! failure "Example message"
 
@@ -327,7 +402,7 @@ When an iterator range for a primitive type (number, boolean, or string) is pass
 
 ### json.exception.invalid_iterator.205
 
-When an iterator for a primitive type (number, boolean, or string) is passed to an erase function, the iterator has to be the `begin()` iterator, because it is the only way to address the stored value. All other iterators are invalid.
+When an iterator for a primitive type (number, boolean, or string) is passed to an [erase](../api/basic_json/erase.md) function, the iterator has to be the `begin()` iterator, because it is the only way to address the stored value. All other iterators are invalid.
 
 !!! failure "Example message"
 
@@ -426,7 +501,6 @@ Cannot get value for iterator: Either the iterator belongs to a null value or it
     [json.exception.invalid_iterator.214] cannot get value
     ```
 
-
 ## Type errors
 
 This exception is thrown in case of a type error; that is, a library function is executed on a JSON value whose type does not match the expected semantics.
@@ -521,7 +595,7 @@ The `value()` member functions can only be executed for certain JSON types.
 
 ### json.exception.type_error.307
 
-The `erase()` member functions can only be executed for certain JSON types.
+The [`erase()`](../api/basic_json/erase.md) member functions can only be executed for certain JSON types.
 
 !!! failure "Example message"
 
@@ -587,7 +661,7 @@ The `update()` member functions can only be executed for certain JSON types.
 
 ### json.exception.type_error.313
 
-The `unflatten` function converts an object whose keys are JSON Pointers back into an arbitrary nested JSON value. The JSON Pointers must not overlap, because then the resulting value would not be well defined.
+The `unflatten` function converts an object whose keys are JSON Pointers back into an arbitrary nested JSON value. The JSON Pointers must not overlap, because then the resulting value would not be well-defined.
 
 !!! failure "Example message"
 
@@ -655,7 +729,6 @@ The dynamic type of the object cannot be represented in the requested serializat
 !!! tip
 
     Encapsulate the JSON value in an object. That is, instead of serializing `#!json true`, serialize `#!json {"value": true}`
-
 
 ## Out of range
 
@@ -746,6 +819,10 @@ UBJSON and BSON only support integer numbers up to 9223372036854775807.
     ```
     number overflow serializing '9223372036854775808'
     ```
+
+!!! note
+
+    Since version 3.9.0, integer numbers beyond int64 are serialized as high-precision UBJSON numbers, and this exception does not further occur. 
 
 ### json.exception.out_of_range.408
 

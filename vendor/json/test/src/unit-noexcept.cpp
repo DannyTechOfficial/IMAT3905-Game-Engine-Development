@@ -1,12 +1,12 @@
 /*
     __ _____ _____ _____
  __|  |   __|     |   | |  JSON for Modern C++ (test suite)
-|  |  |__   |  |  | | | |  version 3.8.0
+|  |  |__   |  |  | | | |  version 3.10.5
 |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 
 Licensed under the MIT License <http://opensource.org/licenses/MIT>.
 SPDX-License-Identifier: MIT
-Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+Copyright (c) 2013-2022 Niels Lohmann <http://nlohmann.me>.
 
 Permission is hereby  granted, free of charge, to any  person obtaining a copy
 of this software and associated  documentation files (the "Software"), to deal
@@ -29,6 +29,10 @@ SOFTWARE.
 
 #include "doctest_compatibility.h"
 
+// disable -Wnoexcept due to struct pod_bis
+DOCTEST_GCC_SUPPRESS_WARNING_PUSH
+DOCTEST_GCC_SUPPRESS_WARNING("-Wnoexcept")
+
 #include <nlohmann/json.hpp>
 
 using nlohmann::json;
@@ -42,16 +46,16 @@ enum test
 struct pod {};
 struct pod_bis {};
 
-void to_json(json&, pod) noexcept;
-void to_json(json&, pod_bis);
-void from_json(const json&, pod) noexcept;
-void from_json(const json&, pod_bis);
-void to_json(json&, pod) noexcept {}
-void to_json(json&, pod_bis) {}
-void from_json(const json&, pod) noexcept {}
-void from_json(const json&, pod_bis) {}
+void to_json(json& /*unused*/, pod /*unused*/) noexcept;
+void to_json(json& /*unused*/, pod_bis /*unused*/);
+void from_json(const json& /*unused*/, pod /*unused*/) noexcept;
+void from_json(const json& /*unused*/, pod_bis /*unused*/);
+void to_json(json& /*unused*/, pod /*unused*/) noexcept {}
+void to_json(json& /*unused*/, pod_bis /*unused*/) {}
+void from_json(const json& /*unused*/, pod /*unused*/) noexcept {}
+void from_json(const json& /*unused*/, pod_bis /*unused*/) {}
 
-static json* j = nullptr;
+json* j = nullptr;
 
 static_assert(noexcept(json{}), "");
 static_assert(noexcept(nlohmann::to_json(*j, 2)), "");
@@ -59,14 +63,14 @@ static_assert(noexcept(nlohmann::to_json(*j, 2.5)), "");
 static_assert(noexcept(nlohmann::to_json(*j, true)), "");
 static_assert(noexcept(nlohmann::to_json(*j, test{})), "");
 static_assert(noexcept(nlohmann::to_json(*j, pod{})), "");
-static_assert(not noexcept(nlohmann::to_json(*j, pod_bis{})), "");
+static_assert(!noexcept(nlohmann::to_json(*j, pod_bis{})), "");
 static_assert(noexcept(json(2)), "");
 static_assert(noexcept(json(test{})), "");
 static_assert(noexcept(json(pod{})), "");
 static_assert(noexcept(j->get<pod>()), "");
-static_assert(not noexcept(j->get<pod_bis>()), "");
+static_assert(!noexcept(j->get<pod_bis>()), "");
 static_assert(noexcept(json(pod{})), "");
-}
+} // namespace
 
 TEST_CASE("runtime checks")
 {
@@ -95,3 +99,5 @@ TEST_CASE("runtime checks")
         from_json(j2, pod_bis());
     }
 }
+
+DOCTEST_GCC_SUPPRESS_WARNING_POP

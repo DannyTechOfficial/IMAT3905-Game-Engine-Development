@@ -2,66 +2,84 @@
 #pragma once
 
 #include "events.h"
-
 #include <functional>
-
 namespace Engine
 {
+	/** \class EventHandler
+	* \brief class for handling events*/
+
 	class EventHandler
 	{
 	public:
-		void setOnCloseCallback(const std::function<bool(WindowCloseEvent&)>& fn) { m_onCloseCallback = fn; }
-		void setOnResizeCallback(const std::function<bool(WindowResizeEvent&)>& fn) { m_onResizeCallback = fn; }
-		void setOnFocusCallback(const std::function<bool(e_WindowFocus&)>& fn) { m_onFocusCallback = fn; }
-		void setOnLostFocusCallback(const std::function<bool(e_WindowLostFocus&)>& fn) {m_onLostFocusCallback = fn; }
-		void setOnWindowMovedCallback(const std::function<bool(e_WindowMoved&)>& fn) { m_onWindowMovedCallback = fn; }
-		void setOnKeyPressedCallback(const std::function<bool(e_KeyPressed&)>& fn) { m_onKeyDownCallback = fn; }
-		void setOnKeyReleasedCallback(const std::function<bool(e_KeyReleased&)>& fn) {m_onKeyUpCallback = fn; }
-		void setOnKeyTypedCallback(const std::function<bool(e_KeyTyped&)>& fn) {m_onKeyTypedCallback = fn; }
-		void setOnButtonPressedCallback(const std::function<bool(e_MouseButtonPressed&)>& fn) {m_onMouseDownCallback = fn; }
-		void setOnButtonReleasedCallback(const std::function<bool(e_MouseButtonReleased&)>& fn) {m_onMouseUpCallback = fn; }
-		void setOnMouseMovedCallback(const std::function<bool(e_MouseMoved&)>& fn) {m_onMouseMovedCallback = fn; }
-		void setOnMouseWheelCallback(const std::function<bool(e_MouseScrolled&)>& fn) {m_onMouseWheelCallback = fn; }
+		//window event callbacks
+		void setOnCloseCallback(const std::function<bool(WindowCloseEvent&)>& fn) { m_onCloseCallbackFn = fn; } //!< window close accessor function
+		void setOnResizeCallback(const std::function<bool(WindowResizeEvent&)>& fn) { m_onResizeCallbackFn = fn; } //!< accessor function
+		void setOnMovedCallback(const std::function<bool(WindowMovedEvent&)>& fn) { m_onMovedCallbackFn = fn; } //!< accessor function
+		void setOnFocusCallback(const std::function<bool(WindowFocusEvent&)>& fn) { m_onFocusCallbackFn = fn; } //!< accessor function
+		void setOnLostFocusCallback(const std::function<bool(WindowLostFocusEvent&)>& fn) { m_onLostFocusCallbackFn = fn; } //!< accessor function
+		std::function<bool(WindowCloseEvent&)>& getOnCloseCallback() { return m_onCloseCallbackFn; } //!< getter function to return the callback
+		std::function<bool(WindowResizeEvent&)>& getOnResizeCallback() { return m_onResizeCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(WindowMovedEvent&)>& getOnMovedCallback() { return m_onMovedCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(WindowLostFocusEvent&)>& getOnLostFocusCallback() { return m_onLostFocusCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(WindowFocusEvent&)>& getOnFocusCallback() { return m_onFocusCallbackFn; } //!<  getter function to return the callback
 
+		//keyboard event callbacks
+		void setOnKeyEvent(const std::function<bool(KeyEvent&)>& fn) { m_onKeyEventCallbackFn = fn; } //!< accessor function
+		void setOnKeyPressedEvent(const std::function<bool(KeyPressedEvent&)>& fn) { m_onKeyPressedEventCallbackFn = fn; } //!< accessor function
+		void setOnKeyReleasedEvent(const std::function<bool(KeyReleasedEvent&)>& fn) { m_onKeyReleasedEventCallbackFn = fn; } //!< accessor function
+		void setOnKeyTypedEvent(const std::function<bool(KeyTypedEvent&)>& fn) { m_onKeyTypedEventCallbackFn = fn; } //!< accessor function
+		std::function<bool(KeyEvent&)>& getOnKeyEventCallback() { return m_onKeyEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(KeyPressedEvent&)>& getOnKeyPressedEventCallback() { return m_onKeyPressedEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(KeyReleasedEvent&)>& getOnKeyReleasedEventCallback() { return m_onKeyReleasedEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(KeyTypedEvent&)>& getOnKeyTypedEventCallback() { return m_onKeyTypedEventCallbackFn; } //!<  getter function to return the callback
 
-		std::function<bool(WindowCloseEvent&)>& getOnCloseCallback() { return m_onCloseCallback; }
-		std::function<bool(WindowResizeEvent&)>& getOnResizeCallback() { return m_onResizeCallback; }
-		std::function<bool(e_WindowFocus&)>& getOnFocusCallback() { return m_onFocusCallback; }
-		std::function<bool(e_WindowLostFocus&)>& getOnLostFocusCallback() { return m_onLostFocusCallback; }
-		std::function<bool(e_WindowMoved&)>& getOnWindowMovedCallback() { return m_onWindowMovedCallback; }
-		std::function<bool(e_KeyPressed&)>& getOnKeyDownCallback() { return m_onKeyDownCallback; }
-		std::function<bool(e_KeyReleased&)>& getOnKeyUpCallback() { return m_onKeyUpCallback; }
-		std::function<bool(e_KeyTyped&)>& getOnKeyTypedCallback() { return m_onKeyTypedCallback; }
-		std::function<bool(e_MouseButtonPressed&)>& getOnMouseDownCallback() { return m_onMouseDownCallback; }
-		std::function<bool(e_MouseButtonReleased&)>& getOnMouseUpCallback() { return m_onMouseUpCallback; }
-		std::function<bool(e_MouseMoved&)>& getOnMouseMovedCallback() { return m_onMouseMovedCallback; }
-		std::function<bool(e_MouseScrolled&)>& getOnMouseWheelCallback() { return m_onMouseWheelCallback; }
+		//mouse event callbacks
+		void setOnMouseMovedEvent(const std::function<bool(MouseMovedEvent&)>& fn) { m_onMouseMovedEventCallbackFn = fn; } //!< accessor function
+		void setOnMouseScrolledEvent(const std::function<bool(MouseScrollEvent&)>& fn) { m_onMouseScrolledEventCallbackFn = fn; } //!< accessor function
+		void setOnMouseBtnPressedEvent(const std::function<bool(MouseButtonPressedEvent&)>& fn) { m_onMouseBtnPressedEventCallbackFn = fn; } //!< accessor function
+		void setOnMouseBtnReleasedEvent(const std::function<bool(MouseButtonReleasedEvent&)>& fn) { m_onMouseBtnReleasedEventCallbackFn = fn; } //!< accessor function
+		std::function<bool(MouseMovedEvent&)>& getOnMouseMovedEventCallback() { return m_onMouseMovedEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(MouseScrollEvent&)>& getOnMouseScrolledEventCallback() { return m_onMouseScrolledEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(MouseButtonPressedEvent&)>& getOnMouseBtnPressedEventCallback() { return m_onMouseBtnPressedEventCallbackFn; } //!<  getter function to return the callback
+		std::function<bool(MouseButtonReleasedEvent&)>& getOnMouseBtnReleasedEventCallback() { return m_onMouseBtnReleasedEventCallbackFn; } //!<  getter function to return the callback
+
 
 	private:
-		std::function<bool(WindowCloseEvent&)> m_onCloseCallback = std::bind(&EventHandler::defaultOnClose, this, std::placeholders::_1);
-		std::function<bool(WindowResizeEvent&)> m_onResizeCallback = std::bind(&EventHandler::defaultOnResize, this, std::placeholders::_1);;
-		std::function<bool(e_WindowFocus&)> m_onFocusCallback = std::bind(&EventHandler::defaultOnFocus, this, std::placeholders::_1);;;
-		std::function<bool(e_WindowLostFocus&)> m_onLostFocusCallback = std::bind(&EventHandler::defaultOnLostFocus, this, std::placeholders::_1);;;
-		std::function<bool(e_WindowMoved&)> m_onWindowMovedCallback = std::bind(&EventHandler::defaultOnWindowMoved, this, std::placeholders::_1);;;
-		std::function<bool(e_KeyPressed&)> m_onKeyDownCallback = std::bind(&EventHandler::defaultOnKeyPressed, this, std::placeholders::_1);;;
-		std::function<bool(e_KeyReleased&)> m_onKeyUpCallback = std::bind(&EventHandler::defaultOnKeyReleased, this, std::placeholders::_1);;;
-		std::function<bool(e_KeyTyped&)> m_onKeyTypedCallback = std::bind(&EventHandler::defaultOnKeyTyped, this, std::placeholders::_1);;;
-		std::function<bool(e_MouseButtonPressed&)> m_onMouseDownCallback = std::bind(&EventHandler::defaultOnMouseButtonPressed, this, std::placeholders::_1);;;
-		std::function<bool(e_MouseButtonReleased&)> m_onMouseUpCallback = std::bind(&EventHandler::defaultOnMouseButtonReleased, this, std::placeholders::_1);;;
-		std::function<bool(e_MouseMoved&)> m_onMouseMovedCallback = std::bind(&EventHandler::defaultOnMouseMoved, this, std::placeholders::_1);;;
-		std::function<bool(e_MouseScrolled&)> m_onMouseWheelCallback = std::bind(&EventHandler::defaultOnMouseScrolled, this, std::placeholders::_1);;;
+		//window fn
+		std::function<bool(WindowCloseEvent&)> m_onCloseCallbackFn = std::bind(&EventHandler::defaultOnCloseCallback, this, std::placeholders::_1); //!<bind the function to make it callable
+		std::function<bool(WindowResizeEvent&)> m_onResizeCallbackFn = std::bind(&EventHandler::defaultOnResizeCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(WindowMovedEvent&)> m_onMovedCallbackFn = std::bind(&EventHandler::defaultOnMovedCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(WindowLostFocusEvent&)> m_onLostFocusCallbackFn = std::bind(&EventHandler::defaultOnLostFocusCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(WindowFocusEvent&)> m_onFocusCallbackFn = std::bind(&EventHandler::defaultOnFocusCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
 		
-		bool defaultOnClose(WindowCloseEvent& e) { return false; }
-		bool defaultOnResize(WindowResizeEvent& e) { return false; }
-		bool defaultOnFocus(e_WindowFocus& e) { return false; }
-		bool defaultOnLostFocus(e_WindowLostFocus& e) { return false; }
-		bool defaultOnWindowMoved(e_WindowMoved& e) { return false; }
-		bool defaultOnKeyPressed(e_KeyPressed& e) { return false; }
-		bool defaultOnKeyReleased(e_KeyReleased& e) { return false; }
-		bool defaultOnKeyTyped(e_KeyTyped& e) { return false; }
-		bool defaultOnMouseButtonPressed(e_MouseButtonPressed& e) { return false; }
-		bool defaultOnMouseButtonReleased(e_MouseButtonReleased& e) { return false; }
-		bool defaultOnMouseMoved(e_MouseMoved& e) { return false; }
-		bool defaultOnMouseScrolled(e_MouseScrolled& e) { return false; }
+		//window bool callbacks
+		bool defaultOnCloseCallback(WindowCloseEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnResizeCallback(WindowResizeEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnMovedCallback(WindowMovedEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnLostFocusCallback(WindowLostFocusEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnFocusCallback(WindowFocusEvent& e) { return false; } //!< return false when not event handled 
+
+		//keyboard fn
+		std::function<bool(KeyEvent&)> m_onKeyEventCallbackFn = std::bind(&EventHandler::defaultOnKeyEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(KeyPressedEvent&)> m_onKeyPressedEventCallbackFn = std::bind(&EventHandler::defaultOnKeyPressedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(KeyReleasedEvent&)> m_onKeyReleasedEventCallbackFn = std::bind(&EventHandler::defaultOnKeyReleasedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(KeyTypedEvent&)> m_onKeyTypedEventCallbackFn = std::bind(&EventHandler::defaultOnKeyTypedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		//keyboard bool callbacks 
+		bool defaultOnKeyEventCallback(KeyEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnKeyPressedEventCallback(KeyPressedEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnKeyReleasedEventCallback(KeyReleasedEvent& e) { return false; } //!< return false when not event handled 
+		bool defaultOnKeyTypedEventCallback(KeyTypedEvent& e) { return false; } //!< return false when not event handled
+
+		//mouse fn
+		std::function<bool(MouseMovedEvent&)> m_onMouseMovedEventCallbackFn = std::bind(&EventHandler::defaultOnMouseMovedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(MouseScrollEvent&)> m_onMouseScrolledEventCallbackFn = std::bind(&EventHandler::defaultOnMouseScrolledEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(MouseButtonPressedEvent&)> m_onMouseBtnPressedEventCallbackFn = std::bind(&EventHandler::defaultOnMouseBtnPressedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		std::function<bool(MouseButtonReleasedEvent&)> m_onMouseBtnReleasedEventCallbackFn = std::bind(&EventHandler::defaultOnMouseBtnReleasedEventCallback , this, std::placeholders::_1); //!<bind the function to make it callable 
+		//mouse bool callbacks
+		bool defaultOnMouseMovedEventCallback(MouseMovedEvent& e) { return false; } //!< return false when not event handled
+		bool defaultOnMouseScrolledEventCallback(MouseScrollEvent& e) { return false; } //!< return false when not event handled
+		bool defaultOnMouseBtnPressedEventCallback(MouseButtonPressedEvent& e) { return false; } //!< return false when not event handled
+		bool defaultOnMouseBtnReleasedEventCallback(MouseButtonReleasedEvent& e) { return false; } //!< return false when not event handled
+
 	};
 }

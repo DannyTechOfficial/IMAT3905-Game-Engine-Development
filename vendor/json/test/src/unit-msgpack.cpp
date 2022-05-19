@@ -1,12 +1,12 @@
 /*
     __ _____ _____ _____
  __|  |   __|     |   | |  JSON for Modern C++ (test suite)
-|  |  |__   |  |  | | | |  version 3.8.0
+|  |  |__   |  |  | | | |  version 3.10.5
 |_____|_____|_____|_|___|  https://github.com/nlohmann/json
 
 Licensed under the MIT License <http://opensource.org/licenses/MIT>.
 SPDX-License-Identifier: MIT
-Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>.
+Copyright (c) 2013-2022 Niels Lohmann <http://nlohmann.me>.
 
 Permission is hereby  granted, free of charge, to any  person obtaining a copy
 of this software and associated  documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ using nlohmann::json;
 #include <iomanip>
 #include <set>
 #include <test_data.hpp>
+#include "test_utils.hpp"
 
 namespace
 {
@@ -51,42 +52,42 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool boolean(bool)
+    bool boolean(bool /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_integer(json::number_integer_t)
+    bool number_integer(json::number_integer_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_unsigned(json::number_unsigned_t)
+    bool number_unsigned(json::number_unsigned_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool number_float(json::number_float_t, const std::string&)
+    bool number_float(json::number_float_t /*unused*/, const std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool string(std::string&)
+    bool string(std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool binary(std::vector<std::uint8_t>&)
+    bool binary(std::vector<std::uint8_t>& /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool start_object(std::size_t)
+    bool start_object(std::size_t /*unused*/)
     {
         return events_left-- > 0;
     }
 
-    bool key(std::string&)
+    bool key(std::string& /*unused*/)
     {
         return events_left-- > 0;
     }
@@ -96,7 +97,7 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool start_array(std::size_t)
+    bool start_array(std::size_t /*unused*/)
     {
         return events_left-- > 0;
     }
@@ -106,7 +107,7 @@ class SaxCountdown
         return events_left-- > 0;
     }
 
-    bool parse_error(std::size_t, const std::string&, const json::exception&)
+    bool parse_error(std::size_t /*unused*/, const std::string& /*unused*/, const json::exception& /*unused*/) // NOLINT(readability-convert-member-functions-to-static)
     {
         return false;
     }
@@ -114,7 +115,7 @@ class SaxCountdown
   private:
     int events_left = 0;
 };
-}
+} // namespace
 
 TEST_CASE("MessagePack")
 {
@@ -257,7 +258,7 @@ TEST_CASE("MessagePack")
 
                         // check individual bytes
                         CHECK(result[0] == 0xcc);
-                        uint8_t restored = static_cast<uint8_t>(result[1]);
+                        auto restored = static_cast<uint8_t>(result[1]);
                         CHECK(restored == i);
 
                         // roundtrip
@@ -292,7 +293,7 @@ TEST_CASE("MessagePack")
 
                         // check individual bytes
                         CHECK(result[0] == 0xcd);
-                        uint16_t restored = static_cast<uint16_t>(static_cast<uint8_t>(result[1]) * 256 + static_cast<uint8_t>(result[2]));
+                        auto restored = static_cast<uint16_t>(static_cast<uint8_t>(result[1]) * 256 + static_cast<uint8_t>(result[2]));
                         CHECK(restored == i);
 
                         // roundtrip
@@ -348,7 +349,7 @@ TEST_CASE("MessagePack")
                 {
                     for (uint64_t i :
                             {
-                                4294967296lu, 9223372036854775807lu
+                                4294967296LU, 9223372036854775807LU
                             })
                     {
                         CAPTURE(i)
@@ -435,7 +436,7 @@ TEST_CASE("MessagePack")
                     const auto result = json::to_msgpack(j);
                     CHECK(result == expected);
 
-                    int16_t restored = static_cast<int16_t>((result[1] << 8) + result[2]);
+                    auto restored = static_cast<int16_t>((result[1] << 8) + result[2]);
                     CHECK(restored == -9263);
 
                     // roundtrip
@@ -445,7 +446,7 @@ TEST_CASE("MessagePack")
 
                 SECTION("-32768..-129 (int 16)")
                 {
-                    for (int16_t i = -32768; i <= -129; ++i)
+                    for (int16_t i = -32768; i <= static_cast<std::int16_t>(-129); ++i)
                     {
                         CAPTURE(i)
 
@@ -468,7 +469,7 @@ TEST_CASE("MessagePack")
 
                         // check individual bytes
                         CHECK(result[0] == 0xd1);
-                        int16_t restored = static_cast<int16_t>((result[1] << 8) + result[2]);
+                        auto restored = static_cast<int16_t>((result[1] << 8) + result[2]);
                         CHECK(restored == i);
 
                         // roundtrip
@@ -484,7 +485,7 @@ TEST_CASE("MessagePack")
                     numbers.push_back(-65536);
                     numbers.push_back(-77777);
                     numbers.push_back(-1048576);
-                    numbers.push_back(-2147483648ll);
+                    numbers.push_back(-2147483648LL);
                     for (auto i : numbers)
                     {
                         CAPTURE(i)
@@ -514,7 +515,7 @@ TEST_CASE("MessagePack")
                                             (static_cast<uint32_t>(result[2]) << 020) +
                                             (static_cast<uint32_t>(result[3]) << 010) +
                                             static_cast<uint32_t>(result[4]);
-                        CHECK(restored == i);
+                        CHECK(static_cast<std::int32_t>(restored) == i);
 
                         // roundtrip
                         CHECK(json::from_msgpack(result) == j);
@@ -526,7 +527,7 @@ TEST_CASE("MessagePack")
                 {
                     std::vector<int64_t> numbers;
                     numbers.push_back(INT64_MIN);
-                    numbers.push_back(-2147483649ll);
+                    numbers.push_back(-2147483649LL);
                     for (auto i : numbers)
                     {
                         CAPTURE(i)
@@ -629,7 +630,7 @@ TEST_CASE("MessagePack")
 
                         // check individual bytes
                         CHECK(result[0] == 0xcc);
-                        uint8_t restored = static_cast<uint8_t>(result[1]);
+                        auto restored = static_cast<uint8_t>(result[1]);
                         CHECK(restored == i);
 
                         // roundtrip
@@ -663,7 +664,7 @@ TEST_CASE("MessagePack")
 
                         // check individual bytes
                         CHECK(result[0] == 0xcd);
-                        uint16_t restored = static_cast<uint16_t>(static_cast<uint8_t>(result[1]) * 256 + static_cast<uint8_t>(result[2]));
+                        auto restored = static_cast<uint16_t>(static_cast<uint8_t>(result[1]) * 256 + static_cast<uint8_t>(result[2]));
                         CHECK(restored == i);
 
                         // roundtrip
@@ -718,7 +719,7 @@ TEST_CASE("MessagePack")
                 {
                     for (uint64_t i :
                             {
-                                4294967296lu, 18446744073709551615lu
+                                4294967296LU, 18446744073709551615LU
                             })
                     {
                         CAPTURE(i)
@@ -774,6 +775,40 @@ TEST_CASE("MessagePack")
                     std::vector<uint8_t> expected =
                     {
                         0xcb, 0x40, 0x09, 0x21, 0xfb, 0x3f, 0xa6, 0xde, 0xfc
+                    };
+                    const auto result = json::to_msgpack(j);
+                    CHECK(result == expected);
+
+                    // roundtrip
+                    CHECK(json::from_msgpack(result) == j);
+                    CHECK(json::from_msgpack(result) == v);
+                    CHECK(json::from_msgpack(result, true, false) == j);
+                }
+
+                SECTION("1.0")
+                {
+                    double v = 1.0;
+                    json j = v;
+                    std::vector<uint8_t> expected =
+                    {
+                        0xca, 0x3f, 0x80, 0x00, 0x00
+                    };
+                    const auto result = json::to_msgpack(j);
+                    CHECK(result == expected);
+
+                    // roundtrip
+                    CHECK(json::from_msgpack(result) == j);
+                    CHECK(json::from_msgpack(result) == v);
+                    CHECK(json::from_msgpack(result, true, false) == j);
+                }
+
+                SECTION("128.128")
+                {
+                    double v = 128.1280059814453125;
+                    json j = v;
+                    std::vector<uint8_t> expected =
+                    {
+                        0xca, 0x43, 0x00, 0x20, 0xc5
                     };
                     const auto result = json::to_msgpack(j);
                     CHECK(result == expected);
@@ -1053,7 +1088,7 @@ TEST_CASE("MessagePack")
 
             SECTION("{\"a\": {\"b\": {\"c\": {}}}}")
             {
-                json j = json::parse("{\"a\": {\"b\": {\"c\": {}}}}");
+                json j = json::parse(R"({"a": {"b": {"c": {}}}})");
                 std::vector<uint8_t> expected =
                 {
                     0x81, 0xa1, 0x61, 0x81, 0xa1, 0x62, 0x81, 0xa1, 0x63, 0x80
@@ -1544,21 +1579,21 @@ TEST_CASE("MessagePack")
         {
             std::vector<uint8_t> v = {0x93, 0x01, 0x02, 0x03};
             SaxCountdown scp(0);
-            CHECK(not json::sax_parse(v, &scp, json::input_format_t::msgpack));
+            CHECK(!json::sax_parse(v, &scp, json::input_format_t::msgpack));
         }
 
         SECTION("start_object(len)")
         {
             std::vector<uint8_t> v = {0x81, 0xa3, 0x66, 0x6F, 0x6F, 0xc2};
             SaxCountdown scp(0);
-            CHECK(not json::sax_parse(v, &scp, json::input_format_t::msgpack));
+            CHECK(!json::sax_parse(v, &scp, json::input_format_t::msgpack));
         }
 
         SECTION("key()")
         {
             std::vector<uint8_t> v = {0x81, 0xa3, 0x66, 0x6F, 0x6F, 0xc2};
             SaxCountdown scp(1);
-            CHECK(not json::sax_parse(v, &scp, json::input_format_t::msgpack));
+            CHECK(!json::sax_parse(v, &scp, json::input_format_t::msgpack));
         }
     }
 }
@@ -1575,9 +1610,7 @@ TEST_CASE("single MessagePack roundtrip")
         json j1 = json::parse(f_json);
 
         // parse MessagePack file
-        std::ifstream f_msgpack(filename + ".msgpack", std::ios::binary);
-        std::vector<uint8_t> packed((std::istreambuf_iterator<char>(f_msgpack)),
-                                    std::istreambuf_iterator<char>());
+        auto packed = utils::read_binary_file(filename + ".msgpack");
         json j2;
         CHECK_NOTHROW(j2 = json::from_msgpack(packed));
 
@@ -1614,23 +1647,21 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
     SECTION("input from msgpack-python")
     {
         // most of these are excluded due to differences in key order (not a real problem)
-        auto exclude_packed = std::set<std::string>
-        {
-            TEST_DATA_DIRECTORY "/json.org/1.json",
-            TEST_DATA_DIRECTORY "/json.org/2.json",
-            TEST_DATA_DIRECTORY "/json.org/3.json",
-            TEST_DATA_DIRECTORY "/json.org/4.json",
-            TEST_DATA_DIRECTORY "/json.org/5.json",
-            TEST_DATA_DIRECTORY "/json_testsuite/sample.json", // kills AppVeyor
-            TEST_DATA_DIRECTORY "/json_tests/pass1.json",
-            TEST_DATA_DIRECTORY "/regression/working_file.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_basic.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_duplicated_key.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_long_strings.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_simple.json",
-            TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_string_unicode.json",
-        };
+        std::set<std::string> exclude_packed;
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json.org/1.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json.org/2.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json.org/3.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json.org/4.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json.org/5.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json_testsuite/sample.json"); // kills AppVeyor
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/json_tests/pass1.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/regression/working_file.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_basic.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_duplicated_key.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_long_strings.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_simple.json");
+        exclude_packed.insert(TEST_DATA_DIRECTORY "/nst_json_testsuite/test_parsing/y_object_string_unicode.json");
 
         for (std::string filename :
                 {
@@ -1790,10 +1821,7 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                std::ifstream f_msgpack(filename + ".msgpack", std::ios::binary);
-                std::vector<uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_msgpack)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".msgpack");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_msgpack(packed));
 
@@ -1823,10 +1851,7 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                std::ifstream f_msgpack(filename + ".msgpack", std::ios::binary);
-                std::vector<uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_msgpack)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".msgpack");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_msgpack({packed.data(), packed.size()}));
 
@@ -1841,12 +1866,9 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 json j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                std::ifstream f_msgpack(filename + ".msgpack", std::ios::binary);
-                std::vector<uint8_t> packed(
-                    (std::istreambuf_iterator<char>(f_msgpack)),
-                    std::istreambuf_iterator<char>());
+                auto packed = utils::read_binary_file(filename + ".msgpack");
 
-                if (!exclude_packed.count(filename))
+                if (exclude_packed.count(filename) == 0u)
                 {
                     {
                         INFO_WITH_TEMP(filename + ": output adapters: std::vector<uint8_t>");

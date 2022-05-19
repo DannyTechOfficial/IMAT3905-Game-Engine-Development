@@ -1,23 +1,23 @@
-/* \file vertexBuffer.h */
+/** \file VertexBuffer.h
+*/
 #pragma once
 
-#include "bufferLayout.h"
 #include <cstdint>
+#include "rendering/bufferLayout.h"
 
-namespace Engine
-{
-	class VertexBuffer //!< Vertex Buffer Agnostic class
+namespace Engine {
+
+	/**
+	\class VertexBuffer
+	*\brief API Agnostic class to include OpenGLVertexBuffer
+	*/
+	class VertexBuffer
 	{
 	public:
-		virtual ~VertexBuffer() = default;
-
-		static VertexBuffer* create(void * vertices, uint32_t size, BufferLayout layout);
-
-		virtual inline uint32_t getRenderID() const = 0;
-		virtual const BufferLayout& getLayout() const = 0;
-		
-		virtual void edit(void* vertices, uint32_t size, int32_t offset) = 0;
-	private:
-
+		virtual ~VertexBuffer() = default;	//!< destructor
+		virtual inline uint32_t getRenderID() const = 0; //!< get render iD
+		virtual inline const VertexBufferLayout& getLayout() const = 0; //!< get buffer layout
+		virtual inline void edit(void* verts, uint32_t size, uint32_t offset) = 0; //!<  edit the VBO
+		static VertexBuffer* create(void* verts, uint32_t size, const VertexBufferLayout& layout); //!<  static function to create in API agnostic code
 	};
 }

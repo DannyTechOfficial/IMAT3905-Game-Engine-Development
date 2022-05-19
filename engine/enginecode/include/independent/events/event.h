@@ -1,51 +1,58 @@
-/* \file event.h */
+/** \file event.h*/
 #pragma once
 
-#include <intTypes.h>
+#include <stdint.h>
 
 namespace Engine
 {
-	/** \enum EventType
-	* An enum for event types */
+	/** \enum EventTypes
+	* \brief Enum for event types
+	*/
 
-	enum class EventType
+	enum class EventTypes
 	{
-		None = 0,
-		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-		KeyPressed, KeyReleased, KeyTyped,
-		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
+		None = 0, //!< none
+		WindowClose, //!< window close event
+		WindowResize, //!< window resize event
+		WindowFocus,//!< window focus event
+		WindowLostFocus, //!< window lost focus event
+		WindowMoved,//!< window moved event
+		KeyPressed, //!< key pressed event
+		KeyReleased, //!< key released event
+		KeyTyped,//!< key typed event
+		MouseBtnPressed, //!< mouse button pressed event
+		MouseBtnReleased, //!< mouse button released
+		MouseMoved,	//!< mouse moved event
+		MouseScrolled	//!< mouse scrolled event
 	};
 
-	/** \enum Event Category
-	* Enum for type category flags
-	*/
+	/** \enum EventCategory
+	* Enum for type categories*/
 
 	enum EventCategory
 	{
 		None = 0,
-		EventCategoryWindow = 1 << 0, //00000001
-		EventCategoryInput = 1 << 1, //00000010
-		EventCategoryKeyboard = 1 << 2, //00000100
-		EventCategoryMouse = 1 << 3, //00001000
-		EventCategoryMouseButton = 1 << 4, //00010000
+		EventCategoryWindow = 1 << 0,		//!< 0000 0001 - 1
+		EventCategoryInput = 1 << 1,		//!< 0000 0010 - 2
+		EventCategoryKeyboard = 1 << 2,		//!< 0000 0100 - 3
+		EventCategoryMouse = 1 << 3,		//!< 0000 1000 - 4
+		EventCategoryMouseButton = 1 << 4	//!< 0001 0000 - 5
 	};
-
-	/**
-	* \class Event
-	* Event base class
-	*/
+	 
+	/** \class Event
+	* \brief Base class for the Events*/
 
 	class Event
 	{
 	public:
-		virtual EventType getEventType() const = 0;
-		virtual int32_t getCategoryFlags() const = 0; //!< Get the event type
-		bool handled() const {
-			return m_handled;
-		};
-		void handle(bool isHandled) { m_handled = isHandled; }
-		inline bool isInCateogory(EventCategory category) const { return getCategoryFlags() & category; } //!< Is Event in cateory
+		virtual EventTypes getEventType() const = 0; //!< Get event type
+		virtual int32_t getCategoryFlags() const = 0; //!< Get event category flags
+		inline bool isHandled() const { return m_handled; } //!< is the event handled
+		inline void handle(bool handle) { m_handled = handle; } //!< handle the event
+		inline bool isInEventCategory(EventCategory eventCat) const { return getCategoryFlags() & eventCat; } //!< is the event in the category
 	protected:
-		bool m_handled = false;
+		bool m_handled = false; //!< has the event handled
+
 	};
+
 }

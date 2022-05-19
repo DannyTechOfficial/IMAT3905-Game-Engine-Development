@@ -14,6 +14,7 @@ interface json::sax_t {
     + {abstract} bool number_float(number_float_t val, const string_t& s)
 
     + {abstract} bool string(string_t& val)
+    + {abstract} bool binary(binary_t& val)
 
     + {abstract} bool start_object(std::size_t elements)
     + {abstract} bool end_object()
@@ -41,6 +42,8 @@ bool number_float(number_float_t val, const string_t& s);
 
 // called when a string is parsed; value is passed and can be safely moved away
 bool string(string_t& val);
+// called when a binary value is parsed; value is passed and can be safely moved away
+bool binary(binary& val);
 
 // called when an object or array begins or ends, resp. The number of elements is passed (or -1 if not known)
 bool start_object(std::size_t elements);
@@ -63,3 +66,8 @@ To implement your own SAX handler, proceed as follows:
 3. Call `#!cpp bool json::sax_parse(input, &my_sax);` where the first parameter can be any input like a string or an input stream and the second parameter is a pointer to your SAX interface.
 
 Note the `sax_parse` function only returns a `#!cpp bool` indicating the result of the last executed SAX event. It does not return `json` value - it is up to you to decide what to do with the SAX events. Furthermore, no exceptions are thrown in case of a parse error - it is up to you what to do with the exception object passed to your `parse_error` implementation. Internally, the SAX interface is used for the DOM parser (class `json_sax_dom_parser`) as well as the acceptor (`json_sax_acceptor`), see file `json_sax.hpp`.
+
+## See also
+
+- [json_sax](../../api/json_sax/index.md) - documentation of the SAX interface
+- [sax_parse](../../api/basic_json/sax_parse.md) - SAX parser

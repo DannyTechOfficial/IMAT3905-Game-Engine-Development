@@ -9,10 +9,10 @@ JSON itself does not have a binary value. As such, binary values are an extensio
 ```plantuml
 class json::binary_t {
     -- setters --
-    +void set_subtype(std::uint8_t subtype)
+    +void set_subtype(std::uint64_t subtype)
     +void clear_subtype()
     -- getters --
-    +std::uint8_t subtype() const
+    +std::uint64_t subtype() const
     +bool has_subtype() const
 }
 
@@ -68,7 +68,7 @@ j.get_binary().has_subtype();  // returns true
 j.get_binary().size();         // returns 4
 ```
 
-For convencience, binary JSON values can be constructed via `json::binary`:
+For convenience, binary JSON values can be constructed via `json::binary`:
 
 ```cpp
 auto j2 = json::binary({0xCA, 0xFE, 0xBA, 0xBE}, 23);
@@ -76,6 +76,7 @@ auto j3 = json::binary({0xCA, 0xFE, 0xBA, 0xBE});
 
 j2 == j;                        // returns true
 j3.get_binary().has_subtype();  // returns false
+j3.get_binary().subtype();      // returns std::uint64_t(-1) as j3 has no subtype
 ```
 
 
@@ -158,14 +159,14 @@ JSON does not have a binary type, and this library does not introduce a new type
 
 ### CBOR
 
-[CBOR](binary_formats/cbor.md) supports binary values, but no subtypes. Any binary value will be serialized as byte strings. The library will choose the smallest representation using the length of the byte array.
+[CBOR](binary_formats/cbor.md) supports binary values, but no subtypes. Subtypes will be serialized as tags. Any binary value will be serialized as byte strings. The library will choose the smallest representation using the length of the byte array.
 
 ??? example
 
     Code:
     
     ```cpp
-    // create a binary value of subtype 42 (will be ignored by CBOR)
+    // create a binary value of subtype 42
     json j;
     j["binary"] = json::binary({0xCA, 0xFE, 0xBA, 0xBE}, 42);
 
@@ -173,17 +174,18 @@ JSON does not have a binary type, and this library does not introduce a new type
     auto v = json::to_cbor(j);      
     ```
             
-    `v` is a `std::vector<std::uint8t>` with the following 13 elements:
+    `v` is a `std::vector<std::uint8t>` with the following 15 elements:
     
     ```c
     0xA1                                   // map(1)
         0x66                               // text(6)
             0x62 0x69 0x6E 0x61 0x72 0x79  // "binary"
+        0xD8 0x2A                          // tag(42)
         0x44                               // bytes(4)
             0xCA 0xFE 0xBA 0xBE            // content
     ```
 
-    Note the subtype (42) is **not** serialized, and deserializing `v` would yield the following value:
+    Note that the subtype is serialized as tag. However, parsing tagged values yield a parse error unless `json::cbor_tag_handler_t::ignore` or `json::cbor_tag_handler_t::store` is passed to `json::from_cbor`.
 
     ```json
     {
@@ -196,7 +198,7 @@ JSON does not have a binary type, and this library does not introduce a new type
 
 ### MessagePack
 
-[MessagePack](binary_formats/messagepack.md) supports binary values and subtypes. If a subtype is given, the ext family is used. The library will choose the smallest representation among fixext1, fixext2, fixext4, fixext8, ext8, ext16, and ext32. The subtype is then added as singed 8-bit integer.
+[MessagePack](binary_formats/messagepack.md) supports binary values and subtypes. If a subtype is given, the ext family is used. The library will choose the smallest representation among fixext1, fixext2, fixext4, fixext8, ext8, ext16, and ext32. The subtype is then added as signed 8-bit integer.
 
 If no subtype is given, the bin family (bin8, bin16, bin32) is used.
 
@@ -280,7 +282,7 @@ If no subtype is given, the bin family (bin8, bin16, bin32) is used.
         0x23 0x69 0x01                  // '#' i 1 number of object elements
         0x69 0x06                       // i 6 (length of the key)
         0x62 0x69 0x6E 0x61 0x72 0x79   // "binary"
-            0x24 0x55                   // '$' 'U' type of the array elements: unsinged integers
+            0x24 0x55                   // '$' 'U' type of the array elements: unsigned integers
             0x23 0x69 0x04              // '#' i 4 number of array elements
             0xCA 0xFE 0xBA 0xBE         // content
     ```

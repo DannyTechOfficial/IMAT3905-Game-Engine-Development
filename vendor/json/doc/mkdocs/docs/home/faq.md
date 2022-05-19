@@ -1,39 +1,52 @@
 # Frequently Asked Questions (FAQ)
 
+## Known bugs
+
+### Brace initialization yields arrays
+
+!!! question
+
+    Why does
+
+    ```cpp
+    json j{true};
+    ```
+
+    and
+
+    ```cpp
+    json j(true);
+    ```
+
+    yield different results (`#!json [true]` vs. `#!json true`)?
+
+This is a known issue, and -- even worse -- the behavior differs between GCC and Clang. The "culprit" for this is the library's constructor overloads for initializer lists to allow syntax like
+
+```cpp
+json array = {1, 2, 3, 4};
+```
+
+for arrays and
+
+```cpp
+json object = {{"one", 1}, {"two", 2}}; 
+```
+
+for objects.
+
+!!! tip
+
+    To avoid any confusion and ensure portable code, **do not** use brace initialization with the types `basic_json`, `json`, or `ordered_json` unless you want to create an object or array as shown in the examples above.
+
 ## Limitations
-
-### Comments
-
-!!! question "Questions"
-
-	- Why does the library not support comments?
-	- Can you add support for JSON5/JSONC/HOCON so that comments are supported?
-
-This library does not support comments. It does so for three reasons:
-
-1. Comments are not part of the [JSON specification](https://tools.ietf.org/html/rfc8259). You may argue that `//` or `/* */` are allowed in JavaScript, but JSON is not JavaScript.
-2. This was not an oversight: Douglas Crockford [wrote on this](https://plus.google.com/118095276221607585885/posts/RK8qyGVaGSr) in May 2012:
-
-	> 	I removed comments from JSON because I saw people were using them to hold parsing directives, a practice which would have destroyed interoperability.  I know that the lack of comments makes some people sad, but it shouldn't. 
-
-	> 	Suppose you are using JSON to keep configuration files, which you would like to annotate. Go ahead and insert all the comments you like. Then pipe it through JSMin before handing it to your JSON parser.
-
-3. It is dangerous for interoperability if some libraries would add comment support while others don't. Please check [The Harmful Consequences of the Robustness Principle](https://tools.ietf.org/html/draft-iab-protocol-maintenance-01) on this.
-
-This library will not support comments in the future. If you wish to use comments, I see three options:
-
-1. Strip comments before using this library.
-2. Use a different JSON library with comment support.
-3. Use a format that natively supports comments (e.g., YAML or JSON5).
-
 
 ### Relaxed parsing
 
 !!! question
 
-	- Can you add an option to ignore trailing commas?
+	Can you add an option to ignore trailing commas?
 
-For the same reason this library does not support [comments](#comments), this library also does not support any feature which would jeopardize interoperability.
+This library does not support any feature which would jeopardize interoperability.
 
 
 ### Parse errors reading non-ASCII characters
@@ -57,28 +70,66 @@ The library supports **Unicode input** as follows:
 In most cases, the parser is right to complain, because the input is not UTF-8 encoded. This is especially true for Microsoft Windows where Latin-1 or ISO 8859-1 is often the standard encoding.
 
 
+### Wide string handling
+
+!!! question
+
+    Why are wide strings (e.g., `std::wstring`) dumped as arrays of numbers?
+
+As described [above](#parse-errors-reading-non-ascii-characters), the library assumes UTF-8 as encoding.  To store a wide string, you need to change the encoding.
+
+!!! example
+
+    ```cpp
+    #include <codecvt> // codecvt_utf8
+    #include <locale>  // wstring_convert
+    
+    // encoding function
+    std::string to_utf8(std::wstring& wide_string)
+    {
+        static std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
+        return utf8_conv.to_bytes(wide_string);
+    }
+    
+    json j;
+    std::wstring ws = L"車B1234 こんにちは";
+    
+    j["original"] = ws;
+    j["encoded"] = to_utf8(ws);
+    
+    std::cout << j << std::endl;
+    ```
+    
+    The result is:
+    
+    ```json
+    {
+      "encoded": "車B1234 こんにちは",
+      "original": [36554, 66, 49, 50, 51, 52, 32, 12371, 12435, 12395, 12385, 12399]
+    }
+    ```
+
+## Exceptions
+
+### Parsing without exceptions
+
+!!! question
+
+    Is it possible to indicate a parse error without throwing an exception?
+
+Yes, see [Parsing and exceptions](../features/parsing/parse_exceptions.md).
+
+
 ### Key name in exceptions
 
 !!! question
 
 	Can I get the key of the object item that caused an exception?
 
-No, this is not possible. See <https://github.com/nlohmann/json/issues/932> for a longer discussion.
+Yes, you can. Please define the symbol [`JSON_DIAGNOSTICS`](../features/macros.md#json_diagnostics) to get [extended diagnostics messages](exceptions.md#extended-diagnostic-messages).
 
 
 ## Serialization issues
-
-
-### Order of object keys
-
-!!! question "Questions"
-
-	- Why are object keys sorted?
-	- Why is the insertion order of object keys not preserved?
-
-By default, the library does not preserve the **insertion order of object elements**. This is standards-compliant, as the [JSON standard](https://tools.ietf.org/html/rfc8259.html) defines objects as "an unordered collection of zero or more name/value pairs".
-
-If you do want to preserve the insertion order, you can specialize the object type with containers like [`tsl::ordered_map`](https://github.com/Tessil/ordered-map) ([integration](https://github.com/nlohmann/json/issues/546#issuecomment-304447518)) or [`nlohmann::fifo_map`](https://github.com/nlohmann/fifo_map) ([integration](https://github.com/nlohmann/json/issues/485#issuecomment-333652309)).
 
 
 ### Number precision
@@ -98,6 +149,7 @@ The library uses `std::numeric_limits<number_float_t>::digits10` (15 for IEEE `d
 
 	The website https://float.exposed gives a good insight into the internal storage of floating-point numbers.
 
+See [this section](../features/types/number_handling.md#number-serialization) on the library's number handling for more information.
 
 ## Compilation issues
 

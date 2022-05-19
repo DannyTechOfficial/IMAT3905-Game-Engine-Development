@@ -1,27 +1,25 @@
-/* \ file GLFWInputPoller.h */
+/** \file GLFWInputPoller.h
+*/
 #pragma once
 
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 #include <GLFW/glfw3.h>
 
-namespace Engine 
-{
-	/* \Class GLFWInputPoller
-		Input poller using GLFW.
-	*/
+namespace Engine {
 
+	/**
+	\class GLFWInputPoller
+	*\brief API Agnostic input poller for getting keyboard and mouse states - specific to the GLFW
+	*/
 	class GLFWInputPoller
 	{
 	public:
-		static bool isKeyPressed(int32_t keyCode); //!< Is Key Pressed
-		static bool isMouseButtonPressed(int32_t mouseButton); //!< is Mouse Button Pressed
-		static glm::vec2 getMousePosition(); //!< Gets the mouses current position
-		static void setCurrentWindow(GLFWwindow* newWin) { s_window = newWin; } //!< Retrieves current window
-
+		static bool isKeyPressed(int32_t keyCode);//!< is the key pressed
+		static bool isKeyReleased(int32_t keyCode);//!< is the key released
+		static bool isMouseButtonPressed(int32_t button);//!< is the mouse button pressed
+		static glm::vec2 getMousePosition(); //!< get mouse position
+		static void setCurrentWindow(GLFWwindow* newWindow) { s_window = newWindow; } //!< set current window
 	private:
-		static GLFWwindow* s_window;
-
+		static GLFWwindow* s_window; //!< pointer to native GLFWwindow
 	};
-
-
 }

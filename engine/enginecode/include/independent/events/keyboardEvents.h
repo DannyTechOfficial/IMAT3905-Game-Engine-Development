@@ -1,53 +1,73 @@
-/* \file keyboardEvents.h */
+/** \file keyboardEvents.h*/
 #pragma once
 
 #include "event.h"
+#include <glm/glm.hpp>
 
-namespace Engine {
-	/**
-\class e_Key
-Keyboard Event Class for different possible events.
-*/
-
-
-	class e_Key : public Event 
+namespace Engine
+{
+	/** \class KeyEvent
+	*\brief base class for keyboard events*/
+	class KeyEvent : public Event
 	{
 	protected:
-		e_Key(int32_t keycode) : m_keyCode(keycode) {}
-		int32_t m_keyCode;
-
+		//! Constructor which sets the keycode
+		/*!
+		\param keyCode int32_t - key press code
+		*/
+		KeyEvent(int32_t keycode) : m_keyCode(keycode) {} 
+		int32_t m_keyCode; //!< key code for the key pressed
 	public:
-		inline int32_t getKeyCode() const { return m_keyCode;  }
-		virtual inline int32_t getCategoryFlags() const override { return EventCategoryKeyboard | EventCategoryInput; }
-
+		inline int32_t getKeyCode() const { return m_keyCode; } //!< get the key code
+		virtual inline int32_t getCategoryFlags() const override { return EventCategoryKeyboard | EventCategoryInput; } //!< get event category
 	};
 
-	class e_KeyPressed : public e_Key
-	{
-	private:
-		int32_t m_repeatCount;
-	public:
-		e_KeyPressed(int32_t keycode, int32_t repeatCount) : e_Key(keycode), m_repeatCount(repeatCount) {}
-
-		inline int32_t getRepeatCount() const { return m_repeatCount;  }
-		static EventType getStaticType() { return EventType::KeyPressed;  }
-		virtual inline EventType getEventType() const override { return getStaticType(); }
-	};
-
-	class e_KeyReleased : public e_Key
+	/** \class KeyPressedEvent
+	*\brief interface to handle the key pressed event*/
+	class KeyPressedEvent : public KeyEvent
 	{
 	public:
-		e_KeyReleased(int32_t keycode) : e_Key(keycode) {}
-		static EventType getStaticType() { return EventType::KeyReleased;  }
-		virtual inline EventType getEventType() const override { return getStaticType(); }
-
+		//! Constructor which sets the keycode and repeat cound
+		/*!
+		\param keyCode int32_t - key press code
+		\param keyRepeatCount int32_t - key repeated press count
+		*/
+		KeyPressedEvent(int32_t  keyPressedCode, int32_t repeatCount) : KeyEvent(keyPressedCode), m_repeatCount(repeatCount) {}
+		
+		int32_t getRepeatCount() const { return m_repeatCount; } //!< get repeat count for key
+		static EventTypes getStaticType() { return EventTypes::KeyPressed; } //!< return static type of key pressed event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
+		int32_t m_repeatCount; //!< key repeat count
 	};
 
-	class e_KeyTyped : public e_Key
+	/** \class KeyReleasedEvent
+	*\brief interface to handle the key released event*/
+	class KeyReleasedEvent : public KeyEvent
 	{
 	public:
-		e_KeyTyped(int32_t keycode) : e_Key(keycode) {}
-		static EventType getStaticType() { return EventType::KeyTyped;  }
-		virtual inline EventType getEventType() const override { return getStaticType(); }
+		//! Constructor which sets the keycode
+		/*!
+		\param keyCode int32_t - key released code
+		*/
+		KeyReleasedEvent(int32_t keyReleasedCode) : KeyEvent(keyReleasedCode) {}
+
+		static EventTypes getStaticType() { return EventTypes::KeyReleased; } //!< return static type of key released event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
 	};
+	
+	/** \class KeyTypedEvent
+	*\brief interface to handle the key pressed event*/
+	class KeyTypedEvent : public KeyEvent
+	{
+	public:
+		//! Constructor which sets the keycode
+		/*!
+		\param keyCode int32_t - key typed code
+		*/
+		KeyTypedEvent(int32_t keyTypedCode): KeyEvent (keyTypedCode){}
+
+		static EventTypes getStaticType() { return EventTypes::KeyTyped; } //!< return static type of key typed event
+		virtual inline EventTypes getEventType() const override { getStaticType(); } //!< Get event type
+	};
+
 }

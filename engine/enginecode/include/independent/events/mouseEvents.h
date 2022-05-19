@@ -1,68 +1,93 @@
-/* \file mouseEvents.h*/
+/** \file mouseEvents.h*/
 #pragma once
 
 #include "event.h"
 #include <glm/glm.hpp>
 
-namespace Engine {
-
-	class e_Mouse : public Event
+namespace Engine
+{
+	/** \class MouseEvent
+	*\brief base class for mouse events*/
+	class MouseEvent : public Event
 	{
-		virtual inline int32_t getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; }
+	protected:
+		int32_t m_button; //!< button code
+		//! Constructor which sets the pressed mouse button code
+		/*!
+		\param buttonCode int32_t - button press code
+		*/
+		void MouseBtnSet(int32_t buttonCode) { m_button=buttonCode; }
+	public:
+		inline int32_t getButton() const { return m_button; } //!< get the button code
+		virtual inline int32_t getCategoryFlags() const override { return EventCategoryMouse | EventCategoryInput; } //<! get category flags
 	};
 
-	class e_MouseMoved : public e_Mouse
+	/** \class MouseButtonPressedEvent
+	*\brief interface to handle the mouse button press event*/
+	class MouseButtonPressedEvent : public MouseEvent
 	{
 	public:
-		e_MouseMoved(float x, float y) : m_mouseX(x), m_mouseY(y) {}
-
-		static EventType getStaticType() { return EventType::MouseMoved;  }
-		virtual inline EventType getEventType() const override { return getStaticType(); }
-		inline float getX() const { return m_mouseX;  }
-		inline float getY() const { return m_mouseY;  }
-		inline glm::vec2 getPos() const { return glm::vec2(m_mouseX, m_mouseY); }
-
+		//! Constructor which sets the pressed mouse button code
+		/*!
+		\param buttonCode int32_t - button press code
+		*/
+		MouseButtonPressedEvent(int32_t  mouseBtn)  {MouseBtnSet(mouseBtn); } //!< constructor to set mouse button pressed
+		static EventTypes getStaticType() { return EventTypes::MouseBtnPressed; } //!< return static type of key pressed event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
+	};
+	
+	/** \class MouseButtonReleasedEvent
+	*\brief interface to handle the mouse button released event*/
+	class MouseButtonReleasedEvent : public MouseEvent
+	{
+	public:
+		//! Constructor which sets the released mouse button code
+		/*!
+		\param buttonCode int32_t - button press code
+		*/
+		MouseButtonReleasedEvent(int32_t  mouseBtn) { MouseBtnSet(mouseBtn); } //!< constructor to set mouse button released
+		static EventTypes getStaticType() { return EventTypes::MouseBtnReleased; } //!< return static type of key pressed event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
+	};
+	
+	/** \class MouseMovedEvent
+	*\brief interface to handle the mouse moved event*/
+	class MouseMovedEvent : public MouseEvent
+	{
+	public:
+		//! Constructor which sets the mouse position
+		/*!
+		\param XPosition float - Position of mouse in X axis
+		\param YPosition float - Position of mouse in Y axis
+		*/
+		MouseMovedEvent(float x, float y) : m_xPos(x), m_yPos(y) {} //!< constructor to set mouse moved position
+		static EventTypes getStaticType() { return EventTypes::MouseMoved; } //!< return static type of key pressed event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
+		inline float getX() const { return m_xPos; } //!< get X position of mouse
+		inline float getY() const { return m_yPos; } //!< gte Y position of mouse
+		inline glm::vec2 getMousePos() const { return glm::vec2(m_xPos,m_yPos); } //!< get XY position of mouse as a Vec2
 	private:
-		float m_mouseX, m_mouseY;
+		float m_xPos; //!< mouse movement in x axis
+		float m_yPos;	//!< mouse movement in y axis
 	};
 
-	class e_MouseScrolled : public e_Mouse
-	{
-
-	public:
-		e_MouseScrolled(float xOffset, float yOffset) : m_xOffset(xOffset), m_yOffset(yOffset) {}
-
-		static EventType getStaticType() { return EventType::MouseScrolled;  }
-		virtual EventType getEventType() const override { return getStaticType(); }
-		inline float getXOffset() const { return m_xOffset;  }
-		inline float getYOffset() const { return m_yOffset;  }
-
-	private:
-		float m_xOffset, m_yOffset;
-	};
-
-	class e_MouseButtonPressed : public e_Mouse
+	/** \class MouseScrollEvent
+	*\brief interface to handle the mouse scroll event*/
+	class MouseScrollEvent : public MouseEvent
 	{
 	public:
-		e_MouseButtonPressed(int32_t button) : m_button(button) {  }
-
-		static EventType getStaticType() { return EventType::MouseButtonPressed;  }
-		virtual EventType getEventType() const override { return getStaticType();  }
-		inline int32_t getButton() const { return m_button;  }
-
+		//! Constructor which sets the mouse scroll
+		/*!
+		\param deltaX float - Vertical scroll
+		\param deltaY float - Horizontal scroll
+		*/
+		MouseScrollEvent(float deltaX, float deltaY) : m_deltaX(deltaX), m_deltaY(deltaY) {} //!< constructor to set mouse scroll 
+		static EventTypes getStaticType() { return EventTypes::MouseScrolled; } //!< return static type of key pressed event
+		virtual inline EventTypes getEventType() const override { return getStaticType(); } //!< Get event type
+		inline float getXScroll() const { return m_deltaX; } //!< get X scroll
+		inline float getYScroll() const { return m_deltaY; } //!< get Y scroll
 	private:
-		int32_t m_button;
-	};
-
-	class e_MouseButtonReleased : public e_Mouse
-	{
-	public:
-		e_MouseButtonReleased(int32_t button) : m_button(button) {}
-
-		static EventType getStaticType() { return EventType::MouseButtonReleased; }
-		virtual EventType getEventType() const override { return getStaticType(); }
-		inline int32_t getButton() const { return m_button;  }
-	private:
-		int32_t m_button;
+		float m_deltaX; //!< scroll in x 
+		float m_deltaY;	//!< scroll in y
 	};
 }

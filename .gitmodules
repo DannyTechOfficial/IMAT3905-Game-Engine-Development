@@ -26,7 +26,7 @@
 [submodule "vendor/IMGui"]
 	path = vendor/IMGui
 	url = https://github.com/TheCherno/imgui.git
-	branch = docking
+	branch = master
 	update = rebase
 [submodule "vendor/json"]
 	path = vendor/json
@@ -34,15 +34,10 @@
 	branch = master
 	update = rebase
 [submodule "vendor/spdlog"]
+	update = rebase
 	path = vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
 	branch = master
-	update = rebase
-[submodule "vendor/STBimage"]
-	path = vendor/STBimage
-	url = https://github.com/nothings/stb.git
-	branch = master
-	update = rebase
 [submodule "vendor/assimp"]
 	path = vendor/assimp
 	url = https://github.com/IMAT3905/assimp.git
@@ -73,3 +68,8 @@
 	url = https://github.com/vinniefalco/LuaBridge.git
 	branch = master
 	update = rebase
+[submodule "vendor/STBimage"]
+	update = rebase
+	path = vendor/STBimage
+	url = https://github.com/nothings/stb.git
+	branch = master
