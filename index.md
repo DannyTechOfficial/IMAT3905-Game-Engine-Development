@@ -8,6 +8,13 @@ The Engine was built using C++, with the functionality to render 2D & 3D into th
 This was a very basic Engine I was tasked to make but with it came a lot of programming skills and styles that I have learned to adapt into my work.
 i.e. Agnostic Code, Documentation, Encapsulation.
 
+### V 2
+Version 2 has some major updates to it featuring registry systems, 3D / 2D rendering, EnTT system, Asmip Object Loading, FrameBuffers, Components(i.e. colliders, rigidbody), Editor and loads more. 
+
+Nanite was a group project that was undertaken during the final years of university and our mission was to develop V1 of Nanite and turn it into a fully functional and usable engine that can be used to build the game me decided (Tank Game).
+
+Download the latest version of nanite and see what you think.
+
 ### V 1
 
 Version 1 was designed on building the foundations of the engine so that it could be built upon to make more features as well as improve existing ones.
