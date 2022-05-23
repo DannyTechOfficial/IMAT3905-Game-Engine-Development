@@ -11,7 +11,7 @@ i.e. Agnostic Code, Documentation, Encapsulation.
 ### V 2
 Version 2 has some major updates to it featuring registry systems, 3D / 2D rendering, EnTT system, Asmip Object Loading, FrameBuffers, Components(i.e. colliders, rigidbody), Editor and loads more. 
 
-Nanite was a team project that was undertaken during the final years of university and our mission was to develop V1 of Nanite and turn it into a fully functional and usable engine that can be used to build the game me decided (Tank Game).
+Nanite was a team project that was undertaken during the final year of university and our mission was to develop V1 of Nanite and turn it into a fully functional and usable engine that can be used to build the game me decided (Tank Game).
 
 Download the latest version of nanite and see what you think.
 
